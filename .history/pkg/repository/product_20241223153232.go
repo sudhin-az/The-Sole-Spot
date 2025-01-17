@@ -1,0 +1,65 @@
+package repository
+
+import (
+	"ecommerce_clean_architecture/pkg/domain"
+	"ecommerce_clean_architecture/pkg/utils/models"
+	"errors"
+	"fmt"
+
+	"gorm.io/gorm"
+)
+
+type ProductRepository struct {
+	DB *gorm.DB
+}
+
+func NewProductRepository(DB *gorm.DB) *ProductRepository {
+	return &ProductRepository{
+		DB: DB,
+	}
+}
+
+func (p *ProductRepository) AddProduct(product models.AddProduct) (models.AddProduct, error) {
+	var productResponse models.AddProduct
+
+	err := p.DB.Raw(`
+        INSERT INTO products (category_id, name,stock, quantity, price) 
+        VALUES (?, ?, ?, ?, ?) 
+        RETURNING id, category_id, name, stock, quantity, price`,
+		product.CategoryID, product.Name, product.Stock, product.Quantity, product.Price).Scan(&productResponse).Error
+
+	if err != nil {
+		return models.AddProduct{}, err
+	}
+	return productResponse, nil
+}
+
+func (p *ProductRepository) UpdateProduct(products models.ProductResponse, productID int) (models.ProductResponse, error) {
+	var productResponse models.ProductResponse
+
+	err := p.DB.Raw("UPDATE products SET category_id = ?, name = ?, stock = ?, quantity = ?, price = ? WHERE id = ? RETURNING id, category_id, name, stock, quantity, price",
+		products.Category_Id, products.Name, products.Stock, products.Quantity, products.Price, productID).Scan(&productResponse).Error
+	if err != nil {
+		return models.ProductResponse{}, fmt.Errorf("error updating product: %w", err)
+	}
+
+	return productResponse, nil
+}
+
+func (p *ProductRepository) DeleteProduct(productID int) error {
+	var products domain.Products
+	err := p.DB.Where("id =?", productID).Delete(&products)
+	if err.RowsAffected < 1 {
+		return errors.New("the id is not existing")
+	}
+	return nil
+}
+
+func (p *ProductRepository) GetProductByID(productID int) (models.ProductResponse, error) {
+	var productResponse models.ProductResponse
+	err := p.DB.Raw("SELECT * FROM products WHERE id = ?", productID).Scan(&productResponse).Error
+	if err != nil {
+		return models.ProductResponse{}, err
+	}
+	return productResponse, nil
+}

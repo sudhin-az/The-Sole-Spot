@@ -1,0 +1,183 @@
+package usecase
+
+import (
+	"ecommerce_clean_architecture/pkg/domain"
+	"ecommerce_clean_architecture/pkg/helper"
+	"ecommerce_clean_architecture/pkg/repository"
+	"ecommerce_clean_architecture/pkg/utils/models"
+	"errors"
+	"fmt"
+
+	"github.com/jinzhu/copier"
+)
+
+type OrderUseCase struct {
+	orderRepository repository.OrderRepository
+	userRepository  repository.UserRepository
+	cartRepository  repository.CartRepository
+}
+
+func NewOrderUseCase(orderRepository repository.OrderRepository, userRepository repository.UserRepository, cartRepository repository.CartRepository) *OrderUseCase {
+	return &OrderUseCase{
+		orderRepository: orderRepository,
+		userRepository:  userRepository,
+		cartRepository:  cartRepository,
+	}
+}
+
+func (o *OrderUseCase) OrderItemsFromCart(orderFromCart models.OrderFromCart, userID int) (domain.OrderSuccessResponse, error) {
+	var orderBody models.OrderIncoming
+	err := copier.Copy(&orderBody, &orderFromCart)
+	if err != nil {
+		return domain.OrderSuccessResponse{}, err
+	}
+	orderBody.UserID = uint(userID)
+	cartExist, err := o.orderRepository.DoesCartExist(userID)
+	if err != nil {
+		return domain.OrderSuccessResponse{}, err
+	}
+	if !cartExist {
+		return domain.OrderSuccessResponse{}, errors.New("cart empty can't order")
+	}
+	addressExist, err := o.orderRepository.AddressExist(orderBody)
+	if err != nil {
+		return domain.OrderSuccessResponse{}, err
+	}
+	if !addressExist {
+		return domain.OrderSuccessResponse{}, errors.New("address does not exist")
+	}
+	cartItems, err := o.cartRepository.GetAllItemsFromCart(userID)
+	if err != nil {
+		return domain.OrderSuccessResponse{}, err
+	}
+
+	// Check stock for each product in the cart
+for _, item := range cartItems {
+    inStock, err := o.orderRepository.CheckStock(item.ProductID, item.Quantity)
+    if err != nil {
+        return domain.OrderSuccessResponse{}, err
+    }
+    if !inStock {
+        return domain.OrderSuccessResponse{}, errors.New("Insufficient Stock for Product ID: " + strconv.Itoa(item.ProductID))
+    }
+}
+
+// Deduct stock after validation
+for _, item := range cartItems {
+    err := o.orderRepository.DeductStock(item.ProductID, item.Quantity)
+    if err != nil {
+        return domain.OrderSuccessResponse{}, err
+    }
+}
+
+
+		newStock := availableStock - c.Quantity
+		err = o.orderRepository.UpdateProductStock(c.ProductID, newStock)
+		if err != nil {
+			return domain.OrderSuccessResponse{}, errors.New("failed to update product stock")
+		}
+	}
+
+	var orderDetails models.Order
+	var orderItemDetails domain.OrderItem
+
+	orderDetails = helper.CopyOrderDetails(orderDetails, orderBody)
+
+	for _, c := range cartItems {
+		orderDetails.GrandTotal += c.TotalPrice
+	}
+	orderDetails.FinalPrice = orderDetails.GrandTotal
+
+	//for cash on delivery
+	if orderBody.PaymentID == 1 {
+
+		if orderDetails.FinalPrice > 5000 {
+			return domain.OrderSuccessResponse{}, errors.New("cash on delivery is not possible")
+		}
+		orderDetails.PaymentStatus = "not paid"
+		orderDetails.ShipmentStatus = "pending"
+	}
+	err = o.orderRepository.CreateOrder(orderDetails)
+	if err != nil {
+		return domain.OrderSuccessResponse{}, err
+	}
+	for _, c := range cartItems {
+		// for each order save details of products and associated details and use order_id as foreign key ( for each order multiple product will be there)
+		orderItemDetails.OrderID = orderDetails.OrderId
+		orderItemDetails.ProductID = c.ProductID
+		orderItemDetails.Quantity = c.Quantity
+		orderItemDetails.TotalPrice = c.TotalPrice
+
+		err := o.orderRepository.AddOrderItems(orderItemDetails, userID, c.ProductID, float64(c.Quantity))
+		if err != nil {
+			return domain.OrderSuccessResponse{}, err
+		}
+	}
+	orderSuccessResponse, err := o.orderRepository.GetBriefOrderDetails(orderDetails.OrderId)
+	if err != nil {
+		return domain.OrderSuccessResponse{}, err
+	}
+	return orderSuccessResponse, nil
+}
+
+func (o *OrderUseCase) GetOrderDetails(userID int) ([]models.FullOrderDetails, error) {
+
+	fullOrderDetails, err := o.orderRepository.GetOrderDetails(userID)
+	if err != nil {
+		return []models.FullOrderDetails{}, err
+	}
+	return fullOrderDetails, nil
+}
+
+func (o *OrderUseCase) CancelOrders(orderID string, userID int) error {
+	userTest, err := o.orderRepository.UserOrderRelationship(orderID, userID)
+	if err != nil {
+		return err
+	}
+	if userTest != userID {
+		return errors.New("the order is not done by this user")
+	}
+
+	orderProductDetails, err := o.orderRepository.GetProductDetailsFromOrders(orderID)
+	if err != nil {
+		return err
+	}
+	shipmentStatus, err := o.orderRepository.GetShipmentStatus(orderID)
+	if err != nil {
+		return err
+	}
+	if shipmentStatus == "delivered" {
+		return errors.New("items already delivered, cannot cancel")
+	}
+
+	if shipmentStatus == "pending" || shipmentStatus == "returned" || shipmentStatus == "Failed" {
+		message := fmt.Sprintf(shipmentStatus)
+
+		return errors.New("the order is in" + message + ", so no point in cancelling")
+	}
+	if shipmentStatus == "cancelled" {
+		return errors.New("the order is already cancelled, so no point in cancelling")
+	}
+	err = o.orderRepository.CancelOrders(orderID)
+	if err != nil {
+		return err
+	}
+	for _, product := range orderProductDetails {
+		availableStock, err := o.orderRepository.GetProductStock(product.ProductID)
+		if err != nil {
+			return err
+		}
+
+		// Restore stock
+		newStock := availableStock + product.Quantity
+		err = o.orderRepository.UpdateProductStock(product.ProductID, newStock)
+		if err != nil {
+			return errors.New("failed to restore product stock")
+		}
+	}
+	err = o.orderRepository.UpdateQuantityOfProduct(orderProductDetails)
+	if err != nil {
+		return err
+	}
+	return nil
+}

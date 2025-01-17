@@ -1,0 +1,132 @@
+package handlers
+
+import (
+	"ecommerce_clean_architecture/pkg/usecase"
+	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_architecture/pkg/utils/response"
+
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+)
+
+type UserHandler struct {
+	userUseCase usecase.UserUseCase
+}
+
+func NewUserHandler(u usecase.UserUseCase) *UserHandler {
+	return &UserHandler{
+		userUseCase: u,
+	}
+}
+
+func (h *UserHandler) UserSignUp(c *gin.Context) {
+	var user models.UserSignUp
+
+	if err := c.ShouldBindJSON(&user); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Invalid request data", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+	if err := usecase.ValidateUserSignUp(user); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Validation failed", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	tokenUsers, err := h.userUseCase.SaveTempUserAndGenerateOTP(user)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusInternalServerError, "Signup failed", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "OTP sent successfully", tokenUsers, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (h *UserHandler) VerifyOTP(c *gin.Context) {
+
+	email := c.Param("email")
+	email = strings.Trim(email, "\"")
+
+	fmt.Println("hellooooooooo", email)
+	if email == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Email is required", nil, "missing email parameter")
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	var verifyUser models.VerifyOTP
+	if err := c.ShouldBindJSON(&verifyUser); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Invalid request data", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	tokenUsers, err := h.userUseCase.VerifyOTPAndRegisterUser(email, verifyUser.OTP)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "OTP verification failed", nil, err.Error())
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "OTP verified and user registered successfully", tokenUsers, nil)
+	c.JSON(http.StatusOK, successRes)
+
+}
+
+func (h *UserHandler) ResendOTP(c *gin.Context) {
+	email := c.Param("email")
+	fmt.Println("Email:", email)
+	if err := h.userUseCase.ResendOTP(email); err != nil {
+		errRes := response.ClientResponse(http.StatusInternalServerError, "Failed to resend OTP", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "OTP resent successfully", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (h *UserHandler) UserLogin(c *gin.Context) {
+	var user models.UserSignUp
+	if err := c.ShouldBindJSON(&user); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "fields provided are in wrong format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	userDetails, err := h.userUseCase.UserLogin(user)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusInternalServerError, "User could not be logged in", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusCreated, "User successfully logged in", userDetails, nil)
+	c.JSON(http.StatusCreated, successRes)
+}
+
+func (h *UserHandler) GetProducts(c *gin.Context) {
+	products, err := h.userUseCase.GetProducts()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not retrieve records of products", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the products", products, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+func (cat *UserHandler) ListCategory(c *gin.Context) {
+	category, err := cat.userUseCase.ListCategory()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not retrieve records of categories", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the categories", category, nil)
+	c.JSON(http.StatusOK, successRes)
+}

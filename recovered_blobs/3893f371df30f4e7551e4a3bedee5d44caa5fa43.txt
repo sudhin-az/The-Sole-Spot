@@ -1,0 +1,21 @@
+package interfaces
+
+import (
+	"ecommerce_clean_architecture/pkg/domain"
+	"ecommerce_clean_architecture/pkg/utils/models"
+	"time"
+)
+
+type UserUseCaseInterface interface {
+	IsEmailExists(email string) bool
+	IsPhoneExists(phone string) bool
+	UserSignUp(user models.UserSignUp) (models.TokenUsers, error)
+	VerifyOTP(email string, verify models.VerifyOTP) error
+	SaveTempUserAndGenerateOTP(user models.UserSignUp) (models.TokenUsers, error)
+	generateAndSaveOTP(email string) (string, time.Time, error)
+	VerifyOTPAndRegisterUser(email string, otp string) (models.TokenUsers, error)
+	ResendOTP(string) error
+	UserLogin(user models.UserSignUp) (models.TokenUsers, error)
+	GetProducts() ([]models.ProductResponse, error)
+	ListCategory() ([]domain.Category, error)
+}

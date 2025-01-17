@@ -1,0 +1,15 @@
+package domain
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+type Category struct {
+	ID          int    `json:"id" gorm:"primarykey;not null"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+	CreatedAt   time.Time
+	DeletedAt   gorm.DeletedAt
+}
