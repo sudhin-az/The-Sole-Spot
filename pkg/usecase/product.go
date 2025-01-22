@@ -1,8 +1,10 @@
 package usecase
 
 import (
+	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/repository"
 	"ecommerce_clean_architecture/pkg/utils/models"
+	"errors"
 )
 
 type ProductUseCase struct {
@@ -16,15 +18,30 @@ func NewProductUseCase(usecase repository.ProductRepository) *ProductUseCase {
 }
 
 func (p *ProductUseCase) AddProduct(product models.AddProduct) (models.ProductResponse, error) {
-
+	if product.Price < 0 || product.Quantity < 0 {
+		return models.ProductResponse{}, errors.New("invalid quantity or price")
+	}
 	products, err := p.ProductRepository.AddProduct(product)
 	if err != nil {
 		return models.ProductResponse{}, err
 	}
-	return products, nil
+	productResponse := models.ProductResponse{
+		ID:          products.ID,
+		Category_Id: products.CategoryID,
+		Name:        products.Name,
+		Stock:       products.Stock,
+		Price:       products.Price,
+		Quantity:    products.Quantity,
+	}
+
+	return productResponse, nil
 }
 
 func (p *ProductUseCase) UpdateProduct(products models.ProductResponse, productID int) (models.ProductResponse, error) {
+
+	if products.Price < 0 || products.Quantity < 0 {
+		return models.ProductResponse{}, errors.New("invalid quantity or price")
+	}
 
 	updateProduct, err := p.ProductRepository.UpdateProduct(products, productID)
 	if err != nil {
@@ -39,4 +56,8 @@ func (p *ProductUseCase) DeleteProduct(productID int) error {
 		return err
 	}
 	return nil
+}
+
+func (p *ProductUseCase) SearchProduct(categoryID string, sortBy string) ([]domain.Products, error) {
+	return p.ProductRepository.GetProductsByCategory(categoryID, sortBy)
 }

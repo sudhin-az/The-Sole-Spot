@@ -82,3 +82,19 @@ func (p *ProductHandler) DeleteProduct(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "the product is deleted", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+func (p *ProductHandler) SearchProduct(c *gin.Context) {
+
+	categoryID := c.Query("category_id")
+	sortBy := c.Query("sort_by")
+
+	products, err := p.ProductUseCase.SearchProduct(categoryID, sortBy)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusInternalServerError, "Failed to fetch products", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Products fetched successfully", products, nil)
+	c.JSON(http.StatusOK, successRes)
+}

@@ -1,41 +1,40 @@
 package usecase
 
 import (
+	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/helper"
-	"ecommerce_clean_architecture/pkg/repository/interfaces"
+	"ecommerce_clean_architecture/pkg/repository"
 	"ecommerce_clean_architecture/pkg/utils"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserUseCase struct {
-	userRepo interfaces.UserRepository
+	userRepo repository.UserRepository
 }
 
-func NewUserUseCase(userRepo interfaces.UserRepository) *UserUseCase {
+func NewUserUseCase(userRepo repository.UserRepository) *UserUseCase {
 	return &UserUseCase{userRepo: userRepo}
 }
 
-// IsEmailExists checks if the email already exists in the database
 func (uc *UserUseCase) IsEmailExists(email string) bool {
 	return uc.userRepo.IsEmailExists(email)
 }
 
-// IsPhoneExists checks if the phone number already exists in the database
 func (uc *UserUseCase) IsPhoneExists(phone string) bool {
 	return uc.userRepo.IsPhoneExists(phone)
 }
 
-func (uc *UserUseCase) UserSignUp(user models.UserSignUp) (models.TokenUsers, error) {
-	// Check if the user already exists in the temp table
+func (uc *UserUseCase) UserSignup(user models.User) (models.TokenUsers, error) {
 	if uc.userRepo.IsEmailExists(user.Email) || uc.userRepo.IsPhoneExists(user.Phone) {
 		return models.TokenUsers{}, errors.New("user already exists")
 	}
-	// Hash the user's password
 	fmt.Println("email", user.Email)
 	hashedPassword, err := helper.HashPassword(user.Password)
 	if err != nil {
@@ -43,64 +42,79 @@ func (uc *UserUseCase) UserSignUp(user models.UserSignUp) (models.TokenUsers, er
 	}
 	user.Password = hashedPassword
 
-	// Generate OTP and save to database with expiry time
 	otp := utils.GenerateOTP()
 	otpExpiry := time.Now().Add(3 * time.Minute)
 
-	// Save OTP
-	fmt.Println("email", user.Email)
 	err = uc.userRepo.SaveOrUpdateOTP(user.Email, otp, otpExpiry)
 	fmt.Println("errrrrrrrrr", err)
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
 
-	// Save user data temporarily
-	fmt.Println("email", user.Email)
 	err = uc.userRepo.SaveTempUser(user)
 	if err != nil {
-		// Cleanup OTP if saving temp user fails
-		uc.userRepo.DeleteOTP(user.Email)
 		return models.TokenUsers{}, err
 	}
 
 	tokenusers, err := uc.userRepo.GetTempUserByEmail(user.Email)
 	if err != nil {
-		// Cleanup OTP if saving temp user fails
 		uc.userRepo.DeleteOTP(user.Email)
 		return models.TokenUsers{}, err
 	}
 
-	// Send OTP to the user's email
 	err = utils.SendOTPEmail(user.Email, otp)
 	if err != nil {
-		// Cleanup temporary user and OTP if sending email fails
-		uc.userRepo.DeleteTempUser(user.Email)
 		uc.userRepo.DeleteOTP(user.Email)
 		return models.TokenUsers{}, err
-	}
-
-	userDetailsResponse := models.UserDetailsResponse{
-		Email:     tokenusers.Email,
-		FirstName: tokenusers.FirstName,
-		LastName:  tokenusers.LastName,
-		Phone:     tokenusers.Phone,
-		Password:  tokenusers.Password,
 	}
 
 	fmt.Println("Token users", tokenusers)
-	return models.TokenUsers{
-		Users: userDetailsResponse,
-	}, nil
+	return models.TokenUsers{}, nil
+}
+func ValidateUser(user models.User) error {
+	var validationErrors []string
+
+	if matched, _ := regexp.MatchString(`^[a-zA-Z\s]+$`, user.FirstName); !matched || len(user.FirstName) < 2 {
+		validationErrors = append(validationErrors, "First name must contain only letters and spaces, and be at least 2 characters long")
+	}
+
+	if matched, _ := regexp.MatchString(`^[a-zA-Z\s]+$`, user.LastName); !matched || len(user.LastName) < 2 {
+		validationErrors = append(validationErrors, "Last name must contain only letters and spaces, and be at least 2 characters long")
+	}
+
+	if matched, _ := regexp.MatchString(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`, user.Email); !matched {
+		validationErrors = append(validationErrors, "Invalid email format")
+	}
+
+	if matched, _ := regexp.MatchString(`^[0-9]{10}$`, user.Phone); !matched {
+		validationErrors = append(validationErrors, "Invalid phone number format")
+	}
+
+	if len(validationErrors) > 0 {
+		return errors.New(strings.Join(validationErrors, "; "))
+	}
+
+	return nil
+}
+func ValidatePassword(password models.NewPassword) error {
+	var validationErrors []string
+	if len(password.Password) < 5 {
+		validationErrors = append(validationErrors, "Password must be at least 5 characters long")
+	}
+	if password.NewPassword != password.ReEnter {
+		return errors.New("password do not match")
+	}
+	if password.NewPassword == "" || password.ReEnter == "" {
+		return errors.New("password cannot be empty")
+	}
+	return nil
 }
 
 func (uc *UserUseCase) VerifyOTP(email string, verify models.VerifyOTP) error {
-	// Fetch OTP and expiry time from the database using the email
 	otp, otpExpiry, err := uc.userRepo.GetOTP(email)
 	if err != nil {
 		return err
 	}
-
 	if otp != verify.OTP {
 		fmt.Println(otp)
 		return errors.New("invalid OTP")
@@ -111,33 +125,19 @@ func (uc *UserUseCase) VerifyOTP(email string, verify models.VerifyOTP) error {
 		return errors.New("expired OTP")
 	}
 
-	// Fetch user data from temporary storage
 	tempUser, err := uc.userRepo.GetTempUserByEmail(email)
 	if err != nil {
 		return err
 	}
 
-	// Ensure user data does not already exist in the main table
 	if uc.userRepo.IsEmailExists(tempUser.Email) || uc.userRepo.IsPhoneExists(tempUser.Phone) {
-		// Clean up temporary user and OTP records
-		uc.userRepo.DeleteTempUser(email)
 		uc.userRepo.DeleteOTP(email)
 		return errors.New("user already exists")
 	}
 
-	// Move user data from temporary table to main table
+	tempUser = models.TempUser{}
 
-	err = uc.userRepo.CreateUser(tempUser)
-	if err != nil {
-		return fmt.Errorf("error creating user: %w", err)
-	}
-
-	// Clean up OTP and temporary user record
 	err = uc.userRepo.DeleteOTP(email)
-	if err != nil {
-		return err
-	}
-	err = uc.userRepo.DeleteTempUser(email)
 	if err != nil {
 		return err
 	}
@@ -145,33 +145,28 @@ func (uc *UserUseCase) VerifyOTP(email string, verify models.VerifyOTP) error {
 	return nil
 }
 
-func (uc *UserUseCase) SaveTempUserAndGenerateOTP(user models.UserSignUp) (models.TokenUsers, error) {
-	// Check if the user already exists in the main table
+func (uc *UserUseCase) SaveTempUserAndGenerateOTP(user models.User) (models.TokenUsers, error) {
 	if uc.userRepo.IsEmailExists(user.Email) || uc.userRepo.IsPhoneExists(user.Phone) {
 		return models.TokenUsers{}, errors.New("user already exists")
 	}
 
-	// Hash the user's password
 	hashedPassword, err := helper.HashPassword(user.Password)
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
 	user.Password = hashedPassword
 
-	// Save the user data temporarily
 	err = uc.userRepo.SaveTempUser(user)
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
 
-	// Generate and save OTP
 	otp, otpExpiry, err := uc.generateAndSaveOTP(user.Email)
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
 	fmt.Println("OTP Expiry time:", otpExpiry)
 
-	// Send OTP to the user's email
 	err = utils.SendOTPEmail(user.Email, otp)
 	if err != nil {
 		uc.userRepo.DeleteTempUser(user.Email)
@@ -181,12 +176,12 @@ func (uc *UserUseCase) SaveTempUserAndGenerateOTP(user models.UserSignUp) (model
 
 	tokenusers, err := uc.userRepo.GetTempUserByEmail(user.Email)
 	if err != nil {
-		// Cleanup OTP if saving temp user fails
 		uc.userRepo.DeleteOTP(user.Email)
 		return models.TokenUsers{}, err
 	}
 
 	userDetailsResponse := models.UserDetailsResponse{
+		Id:        int(tokenusers.ID),
 		Email:     tokenusers.Email,
 		FirstName: tokenusers.FirstName,
 		LastName:  tokenusers.LastName,
@@ -212,26 +207,30 @@ func (uc *UserUseCase) generateAndSaveOTP(email string) (string, time.Time, erro
 }
 
 func (uc *UserUseCase) VerifyOTPAndRegisterUser(email string, otp string) (models.TokenUsers, error) {
-	// Verify the OTP
 	err := uc.VerifyOTP(email, models.VerifyOTP{OTP: otp})
 	fmt.Println(err)
 	if err != nil {
 		return models.TokenUsers{}, errors.New("OTP verification failed")
 	}
 
-	// Retrieve temporary user data
 	tempUser, err := uc.userRepo.GetTempUserByEmail(email)
 	if err != nil {
 		return models.TokenUsers{}, errors.New("temporary user not found")
 	}
 
-	// Move data to main user table
-	err = uc.userRepo.CreateUser(tempUser)
+	User := models.User{
+		ID:        int(tempUser.ID),
+		FirstName: tempUser.FirstName,
+		LastName:  tempUser.LastName,
+		Email:     tempUser.Email,
+		Phone:     tempUser.Phone,
+		Password:  tempUser.Password,
+	}
+	err = uc.userRepo.CreateUser(User)
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
 
-	// Delete temporary user data and OTP after successful registration
 	err = uc.userRepo.DeleteTempUser(email)
 	if err != nil {
 		return models.TokenUsers{}, err
@@ -241,19 +240,26 @@ func (uc *UserUseCase) VerifyOTPAndRegisterUser(email string, otp string) (model
 		return models.TokenUsers{}, err
 	}
 
-	// Generate and return JWT token or any response needed
 	token, err := helper.GenerateTokenUsers(tempUser.ID, tempUser.Email, time.Now())
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
 
-	return models.TokenUsers{AccessToken: token}, nil
+	return models.TokenUsers{AccessToken: token, RefreshToken: token, Users: models.UserDetailsResponse{
+		Id:        int(tempUser.ID),
+		FirstName: tempUser.FirstName,
+		LastName:  tempUser.LastName,
+		Email:     tempUser.Email,
+		Phone:     tempUser.Phone,
+		Password:  tempUser.Password,
+	}}, nil
 }
 
 func (uc *UserUseCase) ResendOTP(email string) error {
+	fmt.Println("Email:", email)
 	otp := utils.GenerateOTP()
-	otpExpiry := time.Now().Add(5 * time.Minute)
-
+	otpExpiry := time.Now().Add(3 * time.Minute)
+	fmt.Println("Email, Otp, OtpExpiry", email, otp, otpExpiry)
 	err := uc.userRepo.UpdateOTP(models.OTP{
 		Email:     email,
 		OTP:       otp,
@@ -262,7 +268,6 @@ func (uc *UserUseCase) ResendOTP(email string) error {
 	if err != nil {
 		return err
 	}
-
 	return utils.SendOTPEmail(email, otp)
 }
 
@@ -272,13 +277,16 @@ func (uc *UserUseCase) UserLogin(user models.UserLogin) (models.TokenUsers, erro
 		return models.TokenUsers{}, errors.New("user does not exist")
 	}
 
+	if userDetails.Blocked {
+		return models.TokenUsers{}, errors.New("user is blocked, so couldn't be logged in")
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(userDetails.Password), []byte(user.Password))
 	if err != nil {
 		return models.TokenUsers{}, errors.New("incorrect password")
 	}
-
-	// Convert UserSignUp to UserDetailsResponse
 	userDetailsResponse := models.UserDetailsResponse{
+		Id:        int(userDetails.ID),
 		Email:     userDetails.Email,
 		FirstName: userDetails.FirstName,
 		LastName:  userDetails.LastName,
@@ -286,7 +294,6 @@ func (uc *UserUseCase) UserLogin(user models.UserLogin) (models.TokenUsers, erro
 		Password:  userDetails.Password,
 	}
 
-	// Generate access and refresh tokens
 	accessToken, err := helper.GenerateAccessToken(userDetailsResponse)
 	if err != nil {
 		return models.TokenUsers{}, errors.New("failed to generate access token")
@@ -302,4 +309,102 @@ func (uc *UserUseCase) UserLogin(user models.UserLogin) (models.TokenUsers, erro
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+
+}
+
+func (uc *UserUseCase) GetProducts() ([]models.ProductResponse, error) {
+	productDetails, err := uc.userRepo.GetProducts()
+	if err != nil {
+		return []models.ProductResponse{}, err
+	}
+	return productDetails, nil
+}
+func (cat *UserUseCase) ListCategory() ([]domain.Category, error) {
+	categoryDetails, err := cat.userRepo.ListCategory()
+	if err != nil {
+		return []domain.Category{}, err
+	}
+	return categoryDetails, nil
+}
+
+func (uc *UserUseCase) UserProfile(userID int) (*models.User, error) {
+	userprofile, err := uc.userRepo.UserProfile(userID)
+	if err != nil {
+		return nil, fmt.Errorf("user with ID %d not found", userID)
+	}
+	return userprofile, nil
+}
+
+func (uc *UserUseCase) UpdateProfile(editProfile models.User) (*models.User, error) {
+	userProfile, err := uc.userRepo.UpdateProfile(editProfile)
+	if err != nil {
+		return &models.User{}, err
+	}
+	return userProfile, nil
+}
+func (uc *UserUseCase) ForgotPassword(email string, input models.ForgotPassword) (models.User, error) {
+	user, err := uc.userRepo.GetUserByEmail(email)
+	if err != nil {
+		return models.User{}, errors.New("user not found")
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return models.User{}, errors.New("failed to hash password")
+	}
+
+	if err := uc.userRepo.ForgotPassword(email, string(hashedPassword)); err != nil {
+		return models.User{}, errors.New("failed to update password")
+	}
+
+	return user, nil
+}
+
+func (uc *UserUseCase) ChangePassword(userID int, input models.NewPassword) (models.User, error) {
+	user, err := uc.userRepo.GetUserByID(userID)
+	if err != nil {
+		return models.User{}, errors.New("failed to retrieve user")
+	}
+	password, err := uc.userRepo.GetPassword(user.ID)
+	if err != nil {
+		return models.User{}, errors.New("failed to retrieve password")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(password.Password), []byte(input.Password)); err != nil {
+		return models.User{}, errors.New("invalid password")
+	}
+	if input.NewPassword != input.ReEnter {
+		return models.User{}, errors.New("passwords do not match")
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return models.User{}, errors.New("failed to hash password")
+	}
+	if err := uc.userRepo.UpdatePassword(userID, string(hashedPassword)); err != nil {
+		return models.User{}, errors.New("failed to update password")
+	}
+	return models.User{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Phone:     user.Phone,
+		Password:  user.Password,
+		Blocked:   user.Blocked,
+	}, nil
+}
+
+func (u *UserUseCase) AddAddress(userID int, address models.AddAddress) (models.AddAddress, error) {
+	return u.userRepo.AddAddress(userID, address)
+}
+func (u *UserUseCase) UpdateAddress(userID int, address models.AddAddress) (models.AddAddress, error) {
+	return u.userRepo.UpdateAddress(userID, address)
+}
+func (u *UserUseCase) DeleteAddress(userID int) error {
+	return u.userRepo.DeleteAddress(userID)
+}
+func (u *UserUseCase) GetAllAddresses(id int) ([]domain.Address, error) {
+	address, err := u.userRepo.GetAllAddresses(id)
+	if err != nil {
+		return []domain.Address{}, err
+	}
+	return address, nil
 }

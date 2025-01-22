@@ -12,18 +12,31 @@ import (
 
 func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 	psqlInfo := fmt.Sprintf("host=%s user=%s dbname=%s port=%s password=%s", cfg.DBHost, cfg.DBUser, cfg.DBName, cfg.DBPort, cfg.DBPassword)
-	db, dbErr := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{
 		SkipDefaultTransaction: true,
 	})
-	db.AutoMigrate(&domain.AdminDetails{})
-	db.AutoMigrate(&domain.Users{})
-	db.AutoMigrate(&domain.Category{})
-	db.AutoMigrate(&domain.Products{})
-	db.AutoMigrate(&models.UserSignUp{})
-	db.AutoMigrate(&models.UserLogin{})
-	db.AutoMigrate(&models.OTP{})
-	db.AutoMigrate(&models.TempUser{})
+	if err != nil {
+		return nil, err
+	}
 
-	return db, dbErr
+	err = db.AutoMigrate(
+		&domain.AdminDetails{},
+		&domain.Address{},
+		&domain.Category{},
+		&domain.Products{},
+		&domain.Review{},
+		&domain.Cart{},
+		&domain.PaymentMethod{},
+		&models.Order{},
+		&domain.OrderItem{},
+		&models.User{},
+		&models.OTP{},
+		&models.TempUser{},
+	)
+	if err != nil {
+		return nil, err
+	}
 
+	fmt.Println("Database migrated successfully!")
+	return db, nil
 }

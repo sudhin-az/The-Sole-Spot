@@ -1,8 +1,8 @@
 package interfaces
 
-import "ecommerce_clean_architecture/pkg/domain"
+import "ecommerce_clean_architecture/pkg/utils/models"
 
 type AuthRepository interface {
-    GetUserByEmail(email string) (domain.Users, error)
-    CreateUser(user domain.Users) error
+	GetUserByEmail(email string) (models.User, error)
+	CreateUser(newuser models.User) error
 }

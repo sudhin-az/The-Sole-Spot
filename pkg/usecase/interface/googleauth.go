@@ -1,10 +1,11 @@
 package interfaces
 
 import (
-	"context"
-	"ecommerce_clean_architecture/pkg/domain"
+	"ecommerce_clean_architecture/pkg/utils/models"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthUseCase interface {
-	HandleGoogleCallback(ctx context.Context, code string) (domain.Users, string, error)
+	HandleGoogleCallback(c *gin.Context, code string) (models.TempUser, string, error)
 }

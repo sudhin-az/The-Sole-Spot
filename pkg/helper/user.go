@@ -2,6 +2,7 @@ package helper
 
 import (
 	"ecommerce_clean_architecture/pkg/utils/models"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -25,7 +26,7 @@ func HashPassword(password string) (string, error) {
 func GenerateTokenUsers(userID uint, userEmail string, expirationTime time.Time) (string, error) {
 
 	claims := &authCustomClaimsUsers{
-		Id:    int(userID), // Convert to int for use in claims
+		Id:    int(userID),
 		Email: userEmail,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
@@ -35,7 +36,7 @@ func GenerateTokenUsers(userID uint, userEmail string, expirationTime time.Time)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte("132457689"))
-
+	fmt.Println("errrrrrrrrr", tokenString)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +46,7 @@ func GenerateTokenUsers(userID uint, userEmail string, expirationTime time.Time)
 
 func GenerateAccessToken(user models.UserDetailsResponse) (string, error) {
 
-	expirationTime := time.Now().Add(15 * time.Minute)
+	expirationTime := time.Now().Add(48 * time.Hour)
 	tokenString, err := GenerateTokenUsers(uint(user.Id), user.Email, expirationTime)
 	if err != nil {
 		return "", err
@@ -62,5 +63,22 @@ func GenerateRefreshToken(user models.UserDetailsResponse) (string, error) {
 		return "", err
 	}
 	return tokeString, nil
+}
+func VerifyAccessToken(token string) (map[string]interface{}, error) {
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte("132457689"), nil
+	})
 
+	if err != nil || !parsedToken.Valid {
+		return nil, err
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("invalid token claims")
+	}
+	return claims, nil
 }

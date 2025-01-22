@@ -39,7 +39,7 @@ func main() {
 
 	// Initialize repositories, use cases, and handlers
 	userRepo := repository.NewUserRepository(database)
-	userUseCase := usecase.NewUserUseCase(userRepo)
+	userUseCase := usecase.NewUserUseCase(*userRepo)
 	userHandler := handlers.NewUserHandler(*userUseCase)
 
 	adminRepo := repository.NewAdminRepository(database)
@@ -60,8 +60,12 @@ func main() {
 	cartHandler := handlers.NewCartHandler(*cartUseCase)
 
 	orderRepo := repository.NewOrderRepository(database)
-	orderUseCase := usecase.NewOrderUseCase(*orderRepo)
+	orderUseCase := usecase.NewOrderUseCase(*orderRepo, *userRepo, *cartRepo)
 	orderHandler := handlers.NewOrderHandler(*orderUseCase)
+
+	reviewRepo := repository.NewReviewRepository(database)
+	reviewUseCase := usecase.NewReviewUseCase(*reviewRepo)
+	reviewHandler := handlers.NewReviewHandler(*reviewUseCase)
 
 	oauthConfig := &oauth2.Config{
 		ClientID:     config.ClientID,
@@ -75,7 +79,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
 	//Initialize the HTTP Server with the user handler
-	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, cartHandler, orderHandler)
+	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, reviewHandler, cartHandler, orderHandler)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {

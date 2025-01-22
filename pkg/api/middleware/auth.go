@@ -3,7 +3,6 @@ package middleware
 import (
 	"ecommerce_clean_architecture/pkg/helper"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,28 +16,49 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token format"})
-			c.Abort()
-			return
-		}
+		tokenString := helper.GetTokenFromHeader(authHeader)
 
-		token := parts[1]
-		claims, err := helper.VerifyAccessToken(token)
+		userID, email, err := helper.ExtractUserIDFromToken(tokenString)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid or expired token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid or expired token", "error": err.Error()})
 			c.Abort()
 			return
 		}
 
-		id, ok := claims["id"].(float64) // Use float64 for numeric claims
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token payload"})
+		c.Set("id", userID)
+		c.Set("email", email)
+		c.Next()
+	}
+}
+
+func AdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Authorization header is missing"})
 			c.Abort()
 			return
 		}
-		c.Set("id", int(id)) // Save ID as an int
+
+		const bearerPrefix = "Bearer "
+		if len(authHeader) < len(bearerPrefix) || authHeader[:len(bearerPrefix)] != bearerPrefix {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Authorization header format is invalid"})
+			c.Abort()
+			return
+		}
+
+		token := authHeader[len(bearerPrefix):]
+
+		name, email, role, ID, err := helper.ExtractClaimsFromToken(token) // Extract userID along with name, email, role
+		if err != nil || role != "admin" {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized or invalid token", "error": err.Error()})
+			c.Abort()
+			return
+		}
+
+		c.Set("id", ID)
+		c.Set("admin_name", name)
+		c.Set("admin_email", email)
 		c.Next()
 	}
 }

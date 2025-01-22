@@ -39,6 +39,17 @@ func (rt *CartHandler) AddToCart(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
+	if req.Quantity <= 0 {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Quantity must be greater than zero", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+	err := rt.cartUseCase.ValidateAddToCart(ID, req.ProductID, req.Quantity)
+	if err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "The product cannot be added to cart", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
 
 	cart, err := rt.cartUseCase.AddToCart(ID, req.ProductID, req.Quantity)
 	if err != nil {

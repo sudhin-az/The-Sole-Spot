@@ -5,6 +5,7 @@ import (
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"ecommerce_clean_architecture/pkg/utils/response"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -60,15 +61,8 @@ func (ad *AdminHandler) LoginHandler(c *gin.Context) {
 }
 
 func (ad *AdminHandler) GetUsers(c *gin.Context) {
-	var listusers models.UserSignUp
 
-	if err := c.ShouldBindJSON(&listusers); err != nil {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Constraints are not in correct format", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errRes)
-		return
-	}
-
-	users, err := ad.adminUseCase.GetUsers(listusers)
+	users, err := ad.adminUseCase.GetUsers()
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not retrieve records of users", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)
@@ -76,4 +70,122 @@ func (ad *AdminHandler) GetUsers(c *gin.Context) {
 	}
 	successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the users", users, nil)
 	c.JSON(http.StatusOK, successRes)
+}
+
+func (ad *AdminHandler) BlockUser(c *gin.Context) {
+	UserID, err := strconv.Atoi(c.Query("id"))
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "check the parameters", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	err = ad.adminUseCase.BlockUser(UserID)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not block the user", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "the user is blockes", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (ad *AdminHandler) UnBlockUsers(c *gin.Context) {
+	UserID, err := strconv.Atoi(c.Query("id"))
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "check the parameters", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	err = ad.adminUseCase.UnBlockUsers(UserID)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not unblock the user", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "the user is unblocked", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (ad *AdminHandler) ListOrders(c *gin.Context) {
+	fullOrderDetails, err := ad.adminUseCase.GetAllOrderDetails()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "Could not fetch the order details", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	if len(fullOrderDetails) == 0 {
+		successRes := response.ClientResponse(http.StatusOK, "No orders found", nil, nil)
+		c.JSON(http.StatusOK, successRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Full Order Details", fullOrderDetails, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (ad *AdminHandler) AdminCancelOrders(c *gin.Context) {
+	orderID := c.Query("order_id")
+	if orderID == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Order ID is required", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	ID, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+	id := ID.(int)
+
+	err := ad.adminUseCase.CancelOrders(orderID, id)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Failed to cancel order", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Order cancelled successfully", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (ad *AdminHandler) ChangeOrderStatus(c *gin.Context) {
+	orderID := c.Query("order_id")
+	if orderID == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Order ID is required", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	var input struct {
+		OrderStatus string `json:"order_status"binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Invalid input format", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+
+	order, err := ad.adminUseCase.ChangeOrderStatus(orderID, input.OrderStatus)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "Failed to update order status", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	response := gin.H{
+		"status_code": 200,
+		"message":     "Order status updated successfully",
+		"error":       nil,
+		"data": gin.H{
+			"order_id":     order.OrderId,
+			"order_status": order.OrderStatus,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }

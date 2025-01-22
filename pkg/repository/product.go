@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
 	"fmt"
@@ -18,35 +19,26 @@ func NewProductRepository(DB *gorm.DB) *ProductRepository {
 	}
 }
 
-func (p *ProductRepository) AddProduct(addProduct models.AddProduct) (models.ProductResponse, error) {
-	var products models.ProductResponse
+func (p *ProductRepository) AddProduct(product models.AddProduct) (models.AddProduct, error) {
+	var productResponse models.AddProduct
 
-	// Check if the category exists
-	var categoryExists bool
-	err := p.DB.Raw("SELECT EXISTS (SELECT 1 FROM categories WHERE id = ?)", addProduct.CategoryID).Scan(&categoryExists).Error
+	err := p.DB.Raw(
+		`INSERT INTO products (category_id, name, stock, quantity, price) 
+        VALUES (?, ?, ?, ?, ?) 
+        RETURNING id, category_id, name, stock, quantity, price`,
+		product.CategoryID, product.Name, product.Stock, product.Quantity, product.Price).Scan(&productResponse).Error
+
 	if err != nil {
-		return models.ProductResponse{}, fmt.Errorf("error checking category existence: %w", err)
+		return models.AddProduct{}, err
 	}
-
-	if !categoryExists {
-		return models.ProductResponse{}, errors.New("category does not exist")
-	}
-
-	// Insert the product
-	err = p.DB.Raw("INSERT INTO products (category_id, name, quantity, stock, price) VALUES (?, ?, ?, ?, ?) RETURNING category_id, name, quantity, stock, price",
-		addProduct.CategoryID, addProduct.Name, addProduct.Quantity, addProduct.Stock, addProduct.Price).Scan(&products).Error
-	if err != nil {
-		return models.ProductResponse{}, fmt.Errorf("error adding product: %w", err)
-	}
-
-	return products, nil
+	return productResponse, nil
 }
 
 func (p *ProductRepository) UpdateProduct(products models.ProductResponse, productID int) (models.ProductResponse, error) {
 	var productResponse models.ProductResponse
 
-	err := p.DB.Raw("UPDATE products SET category_id = ?, name = ?, quantity = ?, stock = ?, price = ? WHERE id = ? RETURNING id, category_id, name, quantity, stock, price",
-		products.CategoryID, products.Name, products.Quantity, products.Stock, products.Price, productID).Scan(&productResponse).Error
+	err := p.DB.Raw("UPDATE products SET category_id = ?, name = ?, stock= ?, quantity = ?, price = ? WHERE id = ? RETURNING id, category_id, name, stock, quantity, price",
+		products.Category_Id, products.Name, products.Stock, products.Quantity, products.Price, productID).Scan(&productResponse).Error
 	if err != nil {
 		return models.ProductResponse{}, fmt.Errorf("error updating product: %w", err)
 	}
@@ -55,7 +47,8 @@ func (p *ProductRepository) UpdateProduct(products models.ProductResponse, produ
 }
 
 func (p *ProductRepository) DeleteProduct(productID int) error {
-	err := p.DB.Exec("DELETE FROM products WHERE id = ?", productID)
+	var products domain.Products
+	err := p.DB.Where("id =?", productID).Delete(&products)
 	if err.RowsAffected < 1 {
 		return errors.New("the id is not existing")
 	}
@@ -63,10 +56,50 @@ func (p *ProductRepository) DeleteProduct(productID int) error {
 }
 
 func (p *ProductRepository) GetProductByID(productID int) (models.ProductResponse, error) {
-	var product models.ProductResponse
-	err := p.DB.Exec("SELECT * FROM products WHERE id = ?", productID).Scan(&product)
-	if err.RowsAffected < 1 {
-		return models.ProductResponse{}, errors.New(fmt.Sprintf("product with productID %d does not exist", productID))
+
+	var productResponse models.ProductResponse
+	err := p.DB.Raw("SELECT * FROM products WHERE id = ?", productID).Scan(&productResponse).Error
+	if err != nil {
+		return models.ProductResponse{}, err
 	}
-	return product, nil
+	return productResponse, nil
+}
+
+func (p *ProductRepository) UpdateStock(productID, qty int) error {
+	return p.DB.Model(&models.ProductResponse{}).
+		Where("id = ?", productID).
+		UpdateColumn("stock", gorm.Expr("stock - ?", qty)).Error
+}
+
+func (p *ProductRepository) GetAllProducts(showOutOfStock bool) ([]models.ProductResponse, error) {
+	var products []models.ProductResponse
+	query := p.DB
+	if !showOutOfStock {
+		query = query.Where("stock > 0")
+	}
+	err := query.Find(&products).Error
+	return products, err
+}
+
+func (p *ProductRepository) GetProductsByCategory(categoryID string, sortBy string) ([]domain.Products, error) {
+	var products []domain.Products
+	query := p.DB.Model(&domain.Products{}).Where("category_id = ? AND  stock > 0", categoryID)
+
+	switch sortBy {
+	case "price_H-L":
+		query = query.Order("price desc")
+	case "price_L-H":
+		query = query.Order("price asc")
+	case "newest":
+		query = query.Order("created_at desc")
+	case "alphabetic":
+		query = query.Order("LOWER(name) ASC")
+	default:
+		query = query.Order("created_at desc")
+	}
+
+	if err := query.Find(&products).Error; err != nil {
+		return nil, err
+	}
+	return products, nil
 }

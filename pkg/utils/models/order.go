@@ -3,47 +3,60 @@ package models
 import "time"
 
 type Order struct {
-	UserID          int `json:"user_id"`
-	AddressID       int `json:"address_id"`
-	PaymentMethodID int `json:"payment_method_id"`
-	CouponID        int `json:"coupon_id"`
+	OrderId         int        `json:"order_id" gorm:"primaryKey;not null"`
+	UserID          int        `json:"user_id" gorm:"not null"`
+	AddressID       uint       `json:"address_id"`
+	Address         Address    `json:"-" gorm:"foreignkey:AddressID"`
+	CouponID        *int       `json:"coupon_id"`
+	Discount        float64    `json:"discount"`
+	GrandTotal      float64    `json:"grand_total"`
+	Method          string     `json:"method"`
+	PaymentStatus   string     `json:"payment_status"`
+	PaymentMethodID uint       `json:"paymentmethod_id"`
+	OrderDate       time.Time  `json:"order_date"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	DeletedAt       *time.Time `json:"deleted_at" gorm:"index"`
+	DeliveryTime    *time.Time `json:"delivery_time"`
+	OrderStatus     string     `json:"order_status"`
+	Approval        bool       `json:"approval"`
+	FinalPrice      float64    `json:"final_price"`
+	PaymentMethod   string     `json:"-" gorm:"foreignkey:PaymentMethodID"`
 }
 type OrderFromCart struct {
-	PaymentID int `json:"payment_id" binding:"required"`
-	AddressID int `json:"address_id" binding:"required"`
+	PaymentID uint    `json:"payment_id" binding:"required"`
+	AddressID uint    `json:"address_id" binding:"required"`
+	ProductID int     `json:"product_id"`
+	Quantity  int     `json:"quantity"`
+	Price     float64 `json:"price"`
 }
+
 type OrderIncoming struct {
-	UserID    int `json:"user_id"`
-	PaymentID int `json:"payment_id"`
-	AddressID int `json:"address_id"`
+	UserID    uint `json:"user_id"`
+	PaymentID uint `json:"payment_id"`
+	AddressID uint `json:"address_id"`
 }
-type OrderResponse struct {
-	UserID         int       `json:"user_id"`
-	OrderID        int       `json:"order_id"`
-	Quantity       int       `json:"quantity"`
-	DiscountAmount float64   `json:"discount_amount"`
-	Total          float64   `json:"total"`
-	Method         string    `json:"method"`
-	Status         string    `json:"status"`
-	PaymentStatus  string    `json:"payment_status"`
-	OrderDate      time.Time `json:"order_date"`
+
+type OrderProducts struct {
+	ProductID int `json:"product_id"`
+	Quantity  int `json:"quantity"`
 }
+
 type OrderDetails struct {
-	OrderId    string
-	FinalPrice float64
-	Status     string
+	OrderId       int
+	FinalPrice    float64
+	OrderStatus   string
+	PaymentStatus string
 }
+
 type OrderProductDetails struct {
-	ProductID  int     `json:"product_id"`
-	Name       string  `json:"name"`
-	Quantity   int     `json:"quantity"`
-	TotalPrice float64 `json:"total_price"`
+	ProductID   uint    `json:"product_id"`
+	ProductName string  `json:"product_name"`
+	Quantity    int     `json:"quantity"`
+	TotalPrice  float64 `json:"total_price"`
 }
+
 type FullOrderDetails struct {
 	OrderDetails        OrderDetails
 	OrderProductDetails []OrderProductDetails
-}
-type OrderProducts struct {
-	ProductId string `json:"product_id"`
-	Quantity  int    `json:"quantity"`
 }

@@ -11,19 +11,12 @@ type Cart struct {
 	UserID     int            `json:"user_id"`
 	ProductID  int            `json:"product_id"`
 	Quantity   int            `json:"quantity"`
-	Price      float64        `json:"price"`
+	Price      int            `json:"price"`
 	TotalPrice float64        `json:"total_price"`
 	CreatedAt  time.Time      `json:"created_at"`
-	DeletedAt  gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
-
 type CartResponse struct {
 	TotalPrice float64 `json:"total_price"`
 	Cart       []Cart  `json:"cart"`
-}
-
-type CartTotal struct {
-	UserName   string  `json:"user_name"`
-	TotalPrice float64 `json:"total_price"`
-	FinalPrice float64 `json:"final_price"`
 }

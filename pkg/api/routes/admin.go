@@ -2,6 +2,7 @@ package routes
 
 import (
 	"ecommerce_clean_architecture/pkg/api/handlers"
+	"ecommerce_clean_architecture/pkg/api/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,8 +14,8 @@ func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, c
 	userdetails := router.Group("/users")
 	{
 		userdetails.GET("/listofusers", adminHandler.GetUsers)
-		// userdetails.GET("/blockusers", adminHandler.BlockUser)
-		// userdetails.GET("/unblockusers", adminHandler.UnBlockUsers)
+		userdetails.GET("/blockusers", adminHandler.BlockUser)
+		userdetails.GET("/unblockusers", adminHandler.UnBlockUsers)
 	}
 
 	category := router.Group("/category")
@@ -29,5 +30,13 @@ func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, c
 		product.POST("/addproduct", productHandler.AddProduct)
 		product.PUT("/updateproduct", productHandler.UpdateProduct)
 		product.DELETE("/deleteproduct", productHandler.DeleteProduct)
+	}
+
+	orders := router.Group("/orders")
+	{
+		orders.Use(middleware.AdminMiddleware())
+		orders.GET("/listorders", adminHandler.ListOrders)
+		orders.PATCH("cancelorders", adminHandler.AdminCancelOrders)
+		orders.PUT("/changeorderstatus", adminHandler.ChangeOrderStatus)
 	}
 }

@@ -14,12 +14,13 @@ type ServerHTTP struct {
 
 // NewServerHTTP initializes a new HTTP server with the necessary routes and handlers.
 func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.AuthHandler,
-	adminHandler *handlers.AdminHandler, categoryHandler *handlers.CategoryHandler, productHandler *handlers.ProductHandler) *ServerHTTP {
+	adminHandler *handlers.AdminHandler, categoryHandler *handlers.CategoryHandler, productHandler *handlers.ProductHandler,
+	reviewHandler *handlers.ReviewHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler) *ServerHTTP {
 	router := gin.New()
 
 	// Set up user routes
 	userGroup := router.Group("/user")
-	routes.UserRoutes(userGroup, userHandler)
+	routes.UserRoutes(userGroup, userHandler, cartHandler, orderHandler, productHandler, reviewHandler)
 
 	authGroup := router.Group("/auth")
 	routes.AuthRoutes(authGroup, authHandler)

@@ -31,52 +31,47 @@ func (uc *AuthUseCase) HandleGoogleLogin() string {
 	return uc.OAuthConfig.AuthCodeURL("state")
 }
 
-func (uc *AuthUseCase) HandleGoogleCallback(c *gin.Context, code string) (models.UserSignUp, string, error) {
-	// Exchange code for a token
+func (uc *AuthUseCase) HandleGoogleCallback(c *gin.Context, code string) (models.User, string, error) {
+
 	token, err := uc.OAuthConfig.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		return models.UserSignUp{}, "", errors.New("failed to exchange token")
+		return models.User{}, "", errors.New("failed to exchange token")
 	}
 
-	// Fetch user information from Google
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
 	if err != nil {
-		return models.UserSignUp{}, "", errors.New("failed to get user information")
+		return models.User{}, "", errors.New("failed to get user information")
 	}
 	defer resp.Body.Close()
 
 	var googleUser domain.GoogleResponse
 	if err := utils.ParseJSON(resp.Body, &googleUser); err != nil {
-		return models.UserSignUp{}, "", errors.New("failed to parse user information")
+		return models.User{}, "", errors.New("failed to parse user information")
 	}
 
-	// Map Google user information to your user model
-	user := models.TempUser{
+	user := models.User{
 		Email: googleUser.Email,
 	}
 
-	// Check if the user already exists
 	existingUser, err := uc.userRepo.GetUserByEmail(user.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			if err := uc.userRepo.CreateUser(user); err != nil {
-				return models.UserSignUp{}, "", errors.New("failed to create user through Google SSO")
+				return models.User{}, "", errors.New("failed to create user through Google SSO")
 			}
 			// existingUser = user
 		} else {
-			return models.UserSignUp{}, "", errors.New("failed to fetch user information")
+			return models.User{}, "", errors.New("failed to fetch user information")
 		}
 	}
 
-	// If user is blocked, deny access
 	if existingUser.Blocked {
-		return models.UserSignUp{}, "", errors.New("user is unauthorized to access")
+		return models.User{}, "", errors.New("user is unauthorized to access")
 	}
 
-	// Generate JWT token
-	tokenString, err := helper.GenerateTokenUsers(existingUser.ID, existingUser.Email, time.Now().Add(24*time.Hour))
+	tokenString, err := helper.GenerateTokenUsers(uint(existingUser.ID), existingUser.Email, time.Now().Add(24*time.Hour))
 	if err != nil {
-		return models.UserSignUp{}, "", errors.New("failed to create authorization token")
+		return models.User{}, "", errors.New("failed to create authorization token")
 	}
 
 	return existingUser, tokenString, nil

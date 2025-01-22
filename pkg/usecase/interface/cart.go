@@ -3,7 +3,8 @@ package interfaces
 import "ecommerce_clean_architecture/pkg/utils/models"
 
 type CartUseCase interface {
-	AddToCart(userID int, productID int, quantity int) (models.CartResponse, error)
+	GetFilterProducts(showOutOfStock bool) ([]models.ProductResponse, error)
 	DisplayCart(userID int) ([]models.Cart, error)
-	RemoveProductFromCart(userID int, productID int) (models.CartResponse, error)
+	AddToCart(userID int, productID int, quantity int) (models.CartResponse, error)
+	RemoveProductFromCart(userID int, productID int, Quantity int) (models.CartResponse, error)
 }
