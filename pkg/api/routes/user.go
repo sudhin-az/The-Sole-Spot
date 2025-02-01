@@ -7,13 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, productHandler *handlers.ProductHandler, reviewHandler *handlers.ReviewHandler) {
+func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, productHandler *handlers.ProductHandler, reviewHandler *handlers.ReviewHandler, paymentHandler *handlers.PaymentHandler) {
+	router.Use(gin.Logger(), gin.Recovery())
 	router.POST("/usersignup", userHandler.UserSignup)
 	router.POST("/verify-otp/:email", userHandler.VerifyOTP)
 	router.POST("/resend-otp/:email", userHandler.ResendOTP)
 	router.POST("/userlogin", userHandler.UserLogin)
 	router.GET("/listproducts", userHandler.GetProducts)
 	router.GET("/listcategory", userHandler.ListCategory)
+
+	router.GET("/payment", paymentHandler.CreatePayment)
+	router.POST("/payment/verify", paymentHandler.OnlinePaymentVerification)
 
 	address := router.Group("/addresses")
 	{
@@ -58,6 +62,7 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 	Review.DELETE("/removereview", reviewHandler.DeleteReview)
 	Review.GET("/getaveragerating", reviewHandler.GetAverageRating)
 }
+
 func AuthRoutes(router *gin.RouterGroup, authHandler *handlers.AuthHandler) {
 	router.GET("/google/login", authHandler.GoogleLogin)
 	router.GET("/google/callback", authHandler.GoogleCallback)

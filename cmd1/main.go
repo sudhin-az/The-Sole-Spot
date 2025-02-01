@@ -55,7 +55,6 @@ func main() {
 	productHandler := handlers.NewProductHandler(*productUseCase)
 
 	cartRepo := repository.NewCartRepository(database)
-	productRepo = repository.NewProductRepository(database)
 	cartUseCase := usecase.NewCartUseCase(*cartRepo, *productRepo)
 	cartHandler := handlers.NewCartHandler(*cartUseCase)
 
@@ -66,6 +65,10 @@ func main() {
 	reviewRepo := repository.NewReviewRepository(database)
 	reviewUseCase := usecase.NewReviewUseCase(*reviewRepo)
 	reviewHandler := handlers.NewReviewHandler(*reviewUseCase)
+
+	paymentRepo := repository.NewPaymentRepository(database)
+	paymentUseCase := usecase.NewPaymentUsecase(*paymentRepo)
+	paymentHandler := handlers.NewPaymentHandler(*paymentUseCase)
 
 	oauthConfig := &oauth2.Config{
 		ClientID:     config.ClientID,
@@ -79,7 +82,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
 	//Initialize the HTTP Server with the user handler
-	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, reviewHandler, cartHandler, orderHandler)
+	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, reviewHandler, cartHandler, orderHandler, paymentHandler)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {

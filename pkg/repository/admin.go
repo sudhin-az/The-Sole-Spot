@@ -213,31 +213,37 @@ func (ad *AdminRepository) UpdatequantityOfproduct(orderProducts []models.OrderP
 	}
 	return nil
 }
-func (ad *AdminRepository) ChangeOrderStatus(orderID string, Status string) (models.Order, error) {
-	var changeorderstatus models.Order
-	err := ad.DB.Model(&models.Order{}).Where("order_id = ?", orderID).Update("order_status", Status).Error
+func (ad *AdminRepository) ChangeOrderStatus(orderID string, status string) (models.Order, error) {
+	var changeOrderStatus models.Order
+	err := ad.DB.Model(&models.Order{}).Where("order_id = ?", orderID).Update("order_status", status).Error
 	if err != nil {
 		return models.Order{}, err
 	}
-	err = ad.DB.Where("order_id = ?", orderID).First(&changeorderstatus).Error
+
+	err = ad.DB.Where("order_id = ?", orderID).First(&changeOrderStatus).Error
 	if err != nil {
 		return models.Order{}, err
 	}
-	orderStatus := "delivered"
-	err = ad.DB.Exec("UPDATE orders SET order_status = ? WHERE order_id = ?", orderStatus, orderID).Error
-	if err != nil {
-		return models.Order{}, err
-	}
-	var paymentMethod int
-	err = ad.DB.Raw("SELECT payment_method_id FROM orders WHERE order_id = ?", orderID).Scan(&paymentMethod).Error
-	if err != nil {
-		return models.Order{}, err
-	}
-	if paymentMethod == 1 || paymentMethod == 3 {
-		err = ad.DB.Exec("UPDATE orders SET payment_status = 'paid' WHERE order_id = ?", orderID).Error
+
+	if status == "shipped" {
+		err = ad.DB.Model(&models.Order{}).Where("order_id = ?", orderID).Update("payment_status", "not paid").Error
 		if err != nil {
 			return models.Order{}, err
 		}
+	} else if status == "delivered" {
+		var paymentMethod int
+		err = ad.DB.Raw("SELECT payment_method_id FROM orders WHERE order_id = ?", orderID).Scan(&paymentMethod).Error
+		if err != nil {
+			return models.Order{}, err
+		}
+
+		if paymentMethod == 1 || paymentMethod == 3 {
+			err = ad.DB.Model(&models.Order{}).Where("order_id = ?", orderID).Update("payment_status", "paid").Error
+			if err != nil {
+				return models.Order{}, err
+			}
+		}
 	}
-	return changeorderstatus, nil
+
+	return changeOrderStatus, nil
 }

@@ -27,6 +27,7 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 		&domain.Review{},
 		&domain.Cart{},
 		&domain.PaymentMethod{},
+		&domain.RazorPay{},
 		&models.Order{},
 		&domain.OrderItem{},
 		&models.User{},

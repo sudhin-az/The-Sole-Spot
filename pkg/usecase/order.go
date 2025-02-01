@@ -65,6 +65,14 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 		order.PaymentMethodID = 1
 		order.Method = "Cash"
 		order.OrderStatus = "pending"
+		order.PaymentStatus = "not paid"
+	}
+
+	if order.PaymentMethod == "ONLINE" {
+		order.PaymentMethodID = 2
+		order.Method = "Razorpay"
+		order.OrderStatus = "pending"
+		order.PaymentStatus = "not paid"
 	}
 
 	for _, item := range cartItems {
@@ -108,7 +116,6 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 	if err != nil {
 		return models.Order{}, fmt.Errorf("failed to fetch brief order details: %w", err)
 	}
-
 	return orderSuccessResponse, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"ecommerce_clean_architecture/pkg/api/handlers"
 	"ecommerce_clean_architecture/pkg/api/routes"
 	"log"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,15 +13,18 @@ type ServerHTTP struct {
 	engine *gin.Engine
 }
 
-// NewServerHTTP initializes a new HTTP server with the necessary routes and handlers.
 func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.AuthHandler,
 	adminHandler *handlers.AdminHandler, categoryHandler *handlers.CategoryHandler, productHandler *handlers.ProductHandler,
-	reviewHandler *handlers.ReviewHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler) *ServerHTTP {
+	reviewHandler *handlers.ReviewHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, paymentHandler *handlers.PaymentHandler) *ServerHTTP {
+
 	router := gin.New()
+
+	templatePath, _ := filepath.Abs("../templates/*")
+	router.LoadHTMLGlob(templatePath)
 
 	// Set up user routes
 	userGroup := router.Group("/user")
-	routes.UserRoutes(userGroup, userHandler, cartHandler, orderHandler, productHandler, reviewHandler)
+	routes.UserRoutes(userGroup, userHandler, cartHandler, orderHandler, productHandler, reviewHandler, paymentHandler)
 
 	authGroup := router.Group("/auth")
 	routes.AuthRoutes(authGroup, authHandler)

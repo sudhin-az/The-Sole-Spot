@@ -49,7 +49,7 @@ func AdminMiddleware() gin.HandlerFunc {
 
 		token := authHeader[len(bearerPrefix):]
 
-		name, email, role, ID, err := helper.ExtractClaimsFromToken(token) // Extract userID along with name, email, role
+		name, email, role, ID, err := helper.ExtractClaimsFromToken(token)
 		if err != nil || role != "admin" {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized or invalid token", "error": err.Error()})
 			c.Abort()
