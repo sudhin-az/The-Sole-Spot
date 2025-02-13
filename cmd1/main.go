@@ -20,12 +20,14 @@ func main() {
 	// Load environment variables from .env file
 	err := gotenv.Load("config.env")
 	if err != nil {
+		fmt.Println("Vivek!", err)
 		log.Fatalf("Error loading .env file")
 	}
 
 	// Load configuration
 	config, configErr := config.LoadConfig()
 	if configErr != nil {
+		fmt.Println("Amaan!", configErr)
 		log.Fatal("Cannot load config:", configErr)
 	}
 	fmt.Println("Loaded config:", config)
@@ -33,6 +35,7 @@ func main() {
 	// Initialize database connection
 	database, dbErr := db.ConnectDatabase(config)
 	if dbErr != nil {
+		fmt.Println("Niketh!", err)
 		log.Fatal("Cannot load database:", dbErr)
 	}
 	fmt.Println("Database connected:", database)
@@ -58,8 +61,12 @@ func main() {
 	cartUseCase := usecase.NewCartUseCase(*cartRepo, *productRepo)
 	cartHandler := handlers.NewCartHandler(*cartUseCase)
 
+	walletRepo := repository.NewWalletRepository(database)
+	walletUseCase := usecase.NewWalletUseCase(*walletRepo)
+	walletHandler := handlers.NewWalletHandler(*walletUseCase)
+
 	orderRepo := repository.NewOrderRepository(database)
-	orderUseCase := usecase.NewOrderUseCase(*orderRepo, *userRepo, *cartRepo)
+	orderUseCase := usecase.NewOrderUseCase(*orderRepo, *userRepo, *cartRepo, *walletRepo, *walletUseCase)
 	orderHandler := handlers.NewOrderHandler(*orderUseCase)
 
 	reviewRepo := repository.NewReviewRepository(database)
@@ -82,7 +89,8 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authUseCase)
 
 	//Initialize the HTTP Server with the user handler
-	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, reviewHandler, cartHandler, orderHandler, paymentHandler)
+	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, reviewHandler, cartHandler, orderHandler,
+		paymentHandler, walletHandler)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {

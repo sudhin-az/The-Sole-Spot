@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, productHandler *handlers.ProductHandler, reviewHandler *handlers.ReviewHandler, paymentHandler *handlers.PaymentHandler) {
+func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cartHandler *handlers.CartHandler,
+	orderHandler *handlers.OrderHandler, productHandler *handlers.ProductHandler, reviewHandler *handlers.ReviewHandler,
+	paymentHandler *handlers.PaymentHandler, walletHandler *handlers.WalletHandler) {
 	router.Use(gin.Logger(), gin.Recovery())
 	router.POST("/usersignup", userHandler.UserSignup)
 	router.POST("/verify-otp/:email", userHandler.VerifyOTP)
@@ -16,9 +18,11 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 	router.GET("/listproducts", userHandler.GetProducts)
 	router.GET("/listcategory", userHandler.ListCategory)
 
+	//payment
 	router.GET("/payment", paymentHandler.CreatePayment)
 	router.POST("/payment/verify", paymentHandler.OnlinePaymentVerification)
 
+	//addresses
 	address := router.Group("/addresses")
 	{
 		address.POST("/forgotpassword", userHandler.ForgotPassword)
@@ -27,18 +31,21 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 		address.PUT("/editaddress", userHandler.UpdateAddress)
 		address.DELETE("/deleteaddress", userHandler.DeleteAddress)
 		address.GET("/alladdress", userHandler.GetAllAddresses)
+		//userProfile
 		address.Use(middleware.AuthMiddleware())
 		address.GET("/userprofile", userHandler.UserProfile)
 		address.PUT("/editprofile", userHandler.UpdateProfile)
 		address.PUT("/changepassword", userHandler.ChangePassword)
 	}
 
+	//products
 	product := router.Group("/products")
 	// {
 	// 	product.GET("/filtercategory", productHandler.FilterCategory)
 	product.GET("/searchproduct", productHandler.SearchProduct)
 	// }
 
+	//cart
 	cart := router.Group("/cart")
 	{
 		cart.Use(middleware.AuthMiddleware())
@@ -47,6 +54,7 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 		cart.GET("/displaycart", cartHandler.DisplayCart)
 	}
 
+	//order
 	order := router.Group("/order")
 	{
 		order.Use(middleware.AuthMiddleware())
@@ -55,6 +63,15 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 		order.PUT("/cancelorders", orderHandler.CancelOrders)
 	}
 
+	//Wallet
+	wallet := router.Group("/wallet")
+	{
+		wallet.Use(middleware.AuthMiddleware())
+		wallet.GET("/getwallet", walletHandler.ViewWallet)
+		wallet.GET("/wallethistory", walletHandler.GetWalletTransaction)
+	}
+
+	//review
 	Review := router.Group("/review")
 	Review.Use(middleware.AuthMiddleware())
 	Review.POST("/addreview", reviewHandler.AddReview)

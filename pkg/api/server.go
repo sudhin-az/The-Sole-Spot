@@ -15,7 +15,8 @@ type ServerHTTP struct {
 
 func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.AuthHandler,
 	adminHandler *handlers.AdminHandler, categoryHandler *handlers.CategoryHandler, productHandler *handlers.ProductHandler,
-	reviewHandler *handlers.ReviewHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler, paymentHandler *handlers.PaymentHandler) *ServerHTTP {
+	reviewHandler *handlers.ReviewHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler,
+	paymentHandler *handlers.PaymentHandler, walletHandler *handlers.WalletHandler) *ServerHTTP {
 
 	router := gin.New()
 
@@ -24,7 +25,8 @@ func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.Auth
 
 	// Set up user routes
 	userGroup := router.Group("/user")
-	routes.UserRoutes(userGroup, userHandler, cartHandler, orderHandler, productHandler, reviewHandler, paymentHandler)
+	routes.UserRoutes(userGroup, userHandler, cartHandler, orderHandler, productHandler, reviewHandler,
+		paymentHandler, walletHandler)
 
 	authGroup := router.Group("/auth")
 	routes.AuthRoutes(authGroup, authHandler)

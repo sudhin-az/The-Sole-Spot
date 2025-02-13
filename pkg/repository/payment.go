@@ -42,7 +42,7 @@ func (pay *PaymentRepository) CheckPaymentStatus(orderID int) (string, error) {
 
 func (pay *PaymentRepository) UpdateOnlinePaymentSucess(orderID int) (*[]models.CombinedOrderDetails, error) {
 	var orders []models.CombinedOrderDetails
-	err := pay.DB.Raw("UPDATE orders set order_status = 'success', payment_status = 'paid' where order_id = ?", orderID).Scan(&orders).Error
+	err := pay.DB.Raw("UPDATE orders set payment_status = 'paid' where order_id = ?", orderID).Scan(&orders).Error
 	if err != nil {
 		return nil, err
 	}

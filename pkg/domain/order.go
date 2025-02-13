@@ -24,7 +24,7 @@ type Order struct {
 	PaymentMethod   string     `json:"-" gorm:"foreignkey:PaymentMethodID"`
 }
 type OrderItem struct {
-	ID         int      `json:"id" gorm:"primaryKey;autoIncrement"`
+	ID         int      `gorm:"primaryKey;autoIncrement"`
 	OrderID    int      `json:"order_id"`
 	Orders     Order    `json:"-" gorm:"foreignkey:OrderID;constraint:OnDelete:CASCADE"`
 	ProductID  int      `json:"product_id"`

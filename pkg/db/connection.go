@@ -30,6 +30,8 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 		&domain.RazorPay{},
 		&models.Order{},
 		&domain.OrderItem{},
+		&domain.Wallet{},
+		&domain.WalletTransaction{},
 		&models.User{},
 		&models.OTP{},
 		&models.TempUser{},

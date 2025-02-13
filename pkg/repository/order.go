@@ -51,9 +51,9 @@ func (o *OrderRepository) AddressExist(AddressID int) (bool, error) {
 	}
 	return count > 0, nil
 }
-func (o *OrderRepository) GetProductStock(productID int) (int, error) {
+func (o *OrderRepository) GetProductStock(tx *gorm.DB, productID int) (int, error) {
 	var stock int
-	err := o.DB.Raw("select stock from products where id = ?", productID).Scan(&stock).Error
+	err := tx.Raw("select stock from products where id = ?", productID).Scan(&stock).Error
 	if err != nil {
 		return 0, err
 	}
@@ -71,13 +71,16 @@ func (o *OrderRepository) CreateOrder(tx *gorm.DB, orderDetails models.Order) (i
 	return orderDetails.OrderId, nil
 }
 func (o *OrderRepository) CreateOrderItems(tx *gorm.DB, orderItems []domain.OrderItem) error {
-	result := tx.Create(&orderItems)
+	for i := range orderItems {
+		orderItems[i].ID = 0
+	}
+	result := tx.Omit("ID").Create(&orderItems)
 	return result.Error
 }
 
-func (o *OrderRepository) FetchCartItem(userID int) ([]domain.Cart, error) {
+func (o *OrderRepository) FetchCartItem(tx *gorm.DB, userID int) ([]domain.Cart, error) {
 	var cartItems []domain.Cart
-	err := o.DB.Raw("select * from carts where user_id = ? and deleted_at is null", userID).Scan(&cartItems).Error
+	err := tx.Raw("select * from carts where user_id = ? and deleted_at is null", userID).Scan(&cartItems).Error
 	if err != nil {
 		return []domain.Cart{}, err
 	}
@@ -102,24 +105,53 @@ func (o *OrderRepository) UserOrderRelationship(orderID int, userID int) (int, e
 	return testUserID, nil
 }
 
-func (o *OrderRepository) GetProductDetailsFromOrders(orderID int) ([]models.OrderProducts, error) {
+func (o *OrderRepository) GetProductDetailsFromOrders(tx *gorm.DB, orderID int) ([]models.OrderProducts, error) {
 	var orderProductDetails []models.OrderProducts
-	err := o.DB.Raw("SELECT product_id, quantity FROM order_items WHERE order_id = ?", orderID).Scan(&orderProductDetails).Error
+	err := tx.Raw("select * from order_items where order_id = ?", orderID).Scan(&orderProductDetails).Error
+	if err != nil {
+		return nil, err
+	}
+	var FinalPrice []float64
+	err = tx.Raw("select total_price from order_items where order_id = ?", orderID).Scan(&FinalPrice).Error
 	if err != nil {
 		return []models.OrderProducts{}, err
 	}
+	for i, val := range orderProductDetails {
+		orderProductDetails[i].FinalPrice = FinalPrice[i]
+		fmt.Println("HASHIM________________________", val.FinalPrice, FinalPrice[i])
+	}
+	fmt.Println("final____________-price", FinalPrice, orderProductDetails)
 	return orderProductDetails, nil
 }
 
-func (o *OrderRepository) GetOrderStatus(orderID int) (string, error) {
+func (o *OrderRepository) GetOrderStatus(tx *gorm.DB, orderID int) (string, error) {
 	var OrderStatus string
-	err := o.DB.Raw("SELECT order_status FROM orders WHERE order_id = ?", orderID).Scan(&OrderStatus).Error
+	err := tx.Raw("SELECT order_status FROM orders WHERE order_id = ?", orderID).Scan(&OrderStatus).Error
 	if err != nil {
 		return "", err
 	}
 	return OrderStatus, nil
 }
+func (o *OrderRepository) GetPaymentStatus(tx *gorm.DB, orderID string) (string, error) {
+	var paymentstatus string
+	err := tx.Raw("select payment_status from orders where order_id=?", orderID).Scan(&paymentstatus).Error
+	if err != nil {
+		return "", err
+	}
+	return paymentstatus, nil
+}
+func (o *OrderRepository) UpdatePaymentStatus(tx *gorm.DB, orderID int, paymentStatus string) error {
+	return tx.Exec("UPDATE orders SET payment_status = ? WHERE order_id = ?", paymentStatus, orderID).Error
+}
 
+func (o *OrderRepository) GetPriceoftheproduct(tx *gorm.DB, orderID string) (float64, error) {
+	var a float64
+	err := tx.Raw("select final_price from orders where order_id=?", orderID).Scan(&a).Error
+	if err != nil {
+		return 0.0, err
+	}
+	return a, nil
+}
 func (o *OrderRepository) GetOrderDetails(userID int) ([]models.FullOrderDetails, error) {
 	var orderDetails []models.OrderDetails
 	o.DB.Raw("SELECT order_id, final_price, order_status, payment_status FROM orders WHERE user_id = ?", userID).Scan(&orderDetails)
@@ -145,19 +177,32 @@ func (o *OrderRepository) GetOrderDetails(userID int) ([]models.FullOrderDetails
 	return fullOrderDetails, nil
 }
 
-func (o *OrderRepository) CancelOrders(orderID int) error {
+func (o *OrderRepository) GetWalletAmount(tx *gorm.DB, userID int) (float64, error) {
+	var walletAvailable float64
+	err := tx.Raw("select balance from wallets where user_id = ?", userID).Scan(&walletAvailable).Error
+	if err != nil {
+		return 0.0, err
+	}
+	return walletAvailable, nil
+}
+
+func (o *OrderRepository) UpdateWalletAmount(tx *gorm.DB, walletAmount float64, UserID int) error {
+	return tx.Exec("UPDATE wallets SET balance = ? WHERE user_id = ?", walletAmount, UserID).Error
+}
+
+func (o *OrderRepository) CancelOrders(tx *gorm.DB, orderID int) error {
 	OrderStatus := "cancelled"
-	err := o.DB.Exec("UPDATE orders SET order_status = ? WHERE order_id = ?", OrderStatus, orderID).Error
+	err := tx.Exec("UPDATE orders SET order_status = ? WHERE order_id = ?", OrderStatus, orderID).Error
 	if err != nil {
 		return err
 	}
 	var paymentMethod int
-	err = o.DB.Raw("SELECT payment_method_id FROM orders WHERE order_id = ?", orderID).Scan(&paymentMethod).Error
+	err = tx.Raw("SELECT payment_method_id FROM orders WHERE order_id = ?", orderID).Scan(&paymentMethod).Error
 	if err != nil {
 		return err
 	}
 	if paymentMethod == 1 || paymentMethod == 3 {
-		err = o.DB.Exec("UPDATE orders SET payment_status = 'refunded' WHERE order_id = ?", orderID).Error
+		err = tx.Exec("UPDATE orders SET payment_status = 'refunded' WHERE order_id = ?", orderID).Error
 		if err != nil {
 			return err
 		}
@@ -165,15 +210,15 @@ func (o *OrderRepository) CancelOrders(orderID int) error {
 	return nil
 }
 
-func (o *OrderRepository) UpdateQuantityOfProduct(orderProducts []models.OrderProducts) error {
+func (o *OrderRepository) UpdateQuantityOfProduct(tx *gorm.DB, orderProducts []models.OrderProducts) error {
 	for _, od := range orderProducts {
 		var quantity int
-		err := o.DB.Raw("select quantity from products where id = ?", od.ProductID).Scan(&quantity).Error
+		err := tx.Raw("select quantity from products where id = ?", od.ProductID).Scan(&quantity).Error
 		if err != nil {
 			return err
 		}
 		od.Quantity += quantity
-		if err := o.DB.Exec("update products set quantity = ? where id = ?", od.Quantity, od.ProductID).Error; err != nil {
+		if err := tx.Exec("update products set quantity = ? where id = ?", od.Quantity, od.ProductID).Error; err != nil {
 			return err
 		}
 	}

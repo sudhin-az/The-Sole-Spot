@@ -38,8 +38,9 @@ type OrderIncoming struct {
 }
 
 type OrderProducts struct {
-	ProductID int `json:"product_id"`
-	Quantity  int `json:"quantity"`
+	ProductID  int     `json:"product_id"`
+	Quantity   int     `json:"quantity"`
+	FinalPrice float64 `json:"total_price"`
 }
 
 type OrderDetails struct {

@@ -20,8 +20,12 @@ type OrderRepository interface {
 	GetBriefOrderDetails(orderID string) (domain.OrderSuccessResponse, error)
 	UserOrderRelationship(orderID string, userID int) (int, error)
 	GetOrderDetails(userID int) ([]models.FullOrderDetails, error)
+	GetWalletAmount(userID int) (float64, error)
+	UpdateWalletAmount(walletAmount float64, UserID int) error
 	CancelOrders(orderID string) error
 	GetOrderStatus(orderID string) (string, error)
+	GetPaymentStatus(orderID string) (string, error)
+	GetPriceoftheproduct(orderID string) (float64, error)
 	GetProductDetailsFromOrders(orderID string) ([]models.OrderProducts, error)
 	UpdateQuantityOfProduct(orderProducts []models.OrderProducts) error
 }
