@@ -16,7 +16,7 @@ type ServerHTTP struct {
 func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.AuthHandler,
 	adminHandler *handlers.AdminHandler, categoryHandler *handlers.CategoryHandler, productHandler *handlers.ProductHandler,
 	reviewHandler *handlers.ReviewHandler, cartHandler *handlers.CartHandler, orderHandler *handlers.OrderHandler,
-	paymentHandler *handlers.PaymentHandler, walletHandler *handlers.WalletHandler) *ServerHTTP {
+	paymentHandler *handlers.PaymentHandler, walletHandler *handlers.WalletHandler, wishlistHandler *handlers.WishlistHandler, couponHandler *handlers.CouponHandler) *ServerHTTP {
 
 	router := gin.New()
 
@@ -26,14 +26,18 @@ func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.Auth
 	// Set up user routes
 	userGroup := router.Group("/user")
 	routes.UserRoutes(userGroup, userHandler, cartHandler, orderHandler, productHandler, reviewHandler,
-		paymentHandler, walletHandler)
+		paymentHandler, walletHandler, wishlistHandler)
 
 	authGroup := router.Group("/auth")
 	routes.AuthRoutes(authGroup, authHandler)
 
 	//Set up admin routes
 	adminGroup := router.Group("/admin")
-	routes.AdminRoutes(adminGroup, adminHandler, categoryHandler, productHandler)
+	routes.AdminRoutes(adminGroup, adminHandler, categoryHandler, productHandler, couponHandler)
+
+	router.GET("/payment", paymentHandler.CreatePayment)
+	router.POST("/payment/verify", paymentHandler.OnlinePaymentVerification)
+	router.GET("/payment/success", paymentHandler.PaymentSuccess)
 
 	return &ServerHTTP{engine: router}
 }

@@ -3,11 +3,14 @@ package domain
 import "time"
 
 type Order struct {
-	OrderId         int        `json:"order_id" gorm:"primaryKey;not null"`
+	OrderId         int        `gorm:"primaryKey;autoIncrement" json:"order_id"`
 	UserID          int        `json:"user_id" gorm:"not null"`
+	Users           Users      `json:"-" gorm:"foreignkey:UserID"`
 	AddressID       uint       `json:"address_id"`
 	Address         Address    `json:"-" gorm:"foreignkey:AddressID"`
-	CouponID        *int       `json:"coupon_id"`
+	CouponID        int        `json:"coupon_id"`
+	Coupon          Coupons    `json:"-" gorm:"foreignkey:CouponID"`
+	CouponCode      string     `json:"coupon_code"`
 	Discount        float64    `json:"discount"`
 	GrandTotal      float64    `json:"grand_total"`
 	Method          string     `json:"method"`

@@ -28,4 +28,9 @@ type OrderRepository interface {
 	GetPriceoftheproduct(orderID string) (float64, error)
 	GetProductDetailsFromOrders(orderID string) ([]models.OrderProducts, error)
 	UpdateQuantityOfProduct(orderProducts []models.OrderProducts) error
+
+	GetCouponDetails(couponCode string) (models.Coupon, error)
+	CheckCouponUsage(userID uint, couponCode string) (int, error)
+	RecordCouponUsage(tx *gorm.DB, userID int, couponCode string) error
+	CheckCouponAppliedOrNot(userID int, couponID string) uint
 }

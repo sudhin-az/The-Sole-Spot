@@ -65,8 +65,16 @@ func main() {
 	walletUseCase := usecase.NewWalletUseCase(*walletRepo)
 	walletHandler := handlers.NewWalletHandler(*walletUseCase)
 
+	couponRepo := repository.NewCouponRepository(database)
+	couponUseCase := usecase.NewCouponUseCase(*couponRepo)
+	couponHandler := handlers.NewCouponHandler(*couponUseCase)
+
+	wishlistRepo := repository.NewWishlistRepository(database)
+	wishlistUseCase := usecase.NewWishlistUseCase(*wishlistRepo)
+	wishlistHandler := handlers.NewWishlistHandler(*wishlistUseCase)
+
 	orderRepo := repository.NewOrderRepository(database)
-	orderUseCase := usecase.NewOrderUseCase(*orderRepo, *userRepo, *cartRepo, *walletRepo, *walletUseCase)
+	orderUseCase := usecase.NewOrderUseCase(*orderRepo, *userRepo, *cartRepo, *walletRepo, *walletUseCase, *couponRepo)
 	orderHandler := handlers.NewOrderHandler(*orderUseCase)
 
 	reviewRepo := repository.NewReviewRepository(database)
@@ -90,7 +98,7 @@ func main() {
 
 	//Initialize the HTTP Server with the user handler
 	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, reviewHandler, cartHandler, orderHandler,
-		paymentHandler, walletHandler)
+		paymentHandler, walletHandler, wishlistHandler, couponHandler)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {

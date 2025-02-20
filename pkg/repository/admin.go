@@ -225,12 +225,12 @@ func (ad *AdminRepository) ChangeOrderStatus(orderID string, status string) (mod
 		return models.Order{}, err
 	}
 
-	if status == "shipped" {
-		err = ad.DB.Model(&models.Order{}).Where("order_id = ?", orderID).Update("payment_status", "not paid").Error
-		if err != nil {
-			return models.Order{}, err
-		}
-	} else if status == "delivered" {
+	// if status == "shipped" {
+	// 	err = ad.DB.Model(&models.Order{}).Where("order_id = ?", orderID).Update("payment_status", "not paid").Error
+	// 	if err != nil {
+	// 		return models.Order{}, err
+	// 	}
+	if status == "delivered" {
 		var paymentMethod int
 		err = ad.DB.Raw("SELECT payment_method_id FROM orders WHERE order_id = ?", orderID).Scan(&paymentMethod).Error
 		if err != nil {

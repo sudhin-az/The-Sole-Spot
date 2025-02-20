@@ -9,7 +9,7 @@ import (
 
 func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cartHandler *handlers.CartHandler,
 	orderHandler *handlers.OrderHandler, productHandler *handlers.ProductHandler, reviewHandler *handlers.ReviewHandler,
-	paymentHandler *handlers.PaymentHandler, walletHandler *handlers.WalletHandler) {
+	paymentHandler *handlers.PaymentHandler, walletHandler *handlers.WalletHandler, wishlistHandler *handlers.WishlistHandler) {
 	router.Use(gin.Logger(), gin.Recovery())
 	router.POST("/usersignup", userHandler.UserSignup)
 	router.POST("/verify-otp/:email", userHandler.VerifyOTP)
@@ -21,6 +21,7 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 	//payment
 	router.GET("/payment", paymentHandler.CreatePayment)
 	router.POST("/payment/verify", paymentHandler.OnlinePaymentVerification)
+	router.GET("/payment/success", paymentHandler.PaymentSuccess)
 
 	//addresses
 	address := router.Group("/addresses")
@@ -69,6 +70,15 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 		wallet.Use(middleware.AuthMiddleware())
 		wallet.GET("/getwallet", walletHandler.ViewWallet)
 		wallet.GET("/wallethistory", walletHandler.GetWalletTransaction)
+	}
+
+	//Wishlist
+	wishlist := router.Group("wishlist")
+	{
+		wishlist.Use(middleware.AuthMiddleware())
+		wishlist.POST("/addtowishlist", wishlistHandler.AddToWishList)
+		wishlist.GET("/getwishlist", wishlistHandler.GetWishList)
+		wishlist.DELETE("/removewishlist", wishlistHandler.RemoveFromWishList)
 	}
 
 	//review

@@ -20,6 +20,12 @@ func NewOrderHandler(useCase usecase.OrderUseCase) *OrderHandler {
 }
 
 func (o *OrderHandler) OrderItemsFromCart(c *gin.Context) {
+	couponCode := c.Query("coupon_code")
+	if couponCode == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Coupon Code is required", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
 	userID, ok := c.Get("id")
 	if !ok {
 		errRes := response.ClientResponse(http.StatusUnauthorized, "User ID not found in context", nil, nil)
@@ -46,6 +52,7 @@ func (o *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 		UserID:        userid,
 		AddressID:     uint(addressId),
 		PaymentMethod: paymentMethod,
+		CouponCode:    couponCode,
 	}
 	orderSuccessResponse, err := o.orderUseCase.OrderItemsFromCart(order)
 	if err != nil {

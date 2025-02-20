@@ -7,12 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, categoryHandler *handlers.CategoryHandler, productHandler *handlers.ProductHandler) {
+func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, categoryHandler *handlers.CategoryHandler,
+	productHandler *handlers.ProductHandler, couponHandler *handlers.CouponHandler) {
 	router.POST("/adminsignup", adminHandler.SignUpHandler)
 	router.POST("/adminlogin", adminHandler.LoginHandler)
 
 	userdetails := router.Group("/users")
 	{
+		userdetails.Use(middleware.AdminMiddleware())
 		userdetails.GET("/listofusers", adminHandler.GetUsers)
 		userdetails.GET("/blockusers", adminHandler.BlockUser)
 		userdetails.GET("/unblockusers", adminHandler.UnBlockUsers)
@@ -20,6 +22,7 @@ func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, c
 
 	category := router.Group("/category")
 	{
+		category.Use(middleware.AdminMiddleware())
 		category.POST("/addcategory", categoryHandler.AddCategory)
 		category.PUT("/updatecategory", categoryHandler.UpdateCategory)
 		category.DELETE("/deletecategory", categoryHandler.DeleteCategory)
@@ -27,6 +30,7 @@ func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, c
 
 	product := router.Group("/product")
 	{
+		product.Use(middleware.AdminMiddleware())
 		product.POST("/addproduct", productHandler.AddProduct)
 		product.PUT("/updateproduct", productHandler.UpdateProduct)
 		product.DELETE("/deleteproduct", productHandler.DeleteProduct)
@@ -38,5 +42,13 @@ func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, c
 		orders.GET("/listorders", adminHandler.ListOrders)
 		orders.PATCH("cancelorders", adminHandler.AdminCancelOrders)
 		orders.PUT("/changeorderstatus", adminHandler.ChangeOrderStatus)
+	}
+
+	coupon := router.Group("/coupons")
+	{
+		coupon.Use(middleware.AdminMiddleware())
+		coupon.POST("/addcoupon", couponHandler.CreateNewCoupon)
+		coupon.DELETE("/deletecoupon", couponHandler.MakeCouponInvalid)
+		coupon.GET("/getallcoupon", couponHandler.GetAllCoupons)
 	}
 }

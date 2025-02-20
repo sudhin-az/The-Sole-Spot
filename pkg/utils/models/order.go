@@ -3,11 +3,12 @@ package models
 import "time"
 
 type Order struct {
-	OrderId         int        `json:"order_id" gorm:"primaryKey;not null"`
+	OrderId         int        `gorm:"primaryKey;autoIncrement" json:"order_id"`
 	UserID          int        `json:"user_id" gorm:"not null"`
 	AddressID       uint       `json:"address_id"`
 	Address         Address    `json:"-" gorm:"foreignkey:AddressID"`
-	CouponID        *int       `json:"coupon_id"`
+	CouponID        *uint      `json:"coupon_id,omitempty"`
+	CouponCode      string     `json:"coupon_code"`
 	Discount        float64    `json:"discount"`
 	GrandTotal      float64    `json:"grand_total"`
 	Method          string     `json:"method"`

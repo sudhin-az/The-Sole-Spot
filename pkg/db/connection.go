@@ -32,6 +32,8 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 		&domain.OrderItem{},
 		&domain.Wallet{},
 		&domain.WalletTransaction{},
+		&domain.Coupons{},
+		&domain.Wishlist{},
 		&models.User{},
 		&models.OTP{},
 		&models.TempUser{},

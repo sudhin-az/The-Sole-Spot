@@ -3,6 +3,7 @@ package repository
 import (
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/utils/models"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -64,7 +65,16 @@ func (o *OrderRepository) UpdateProductStock(tx *gorm.DB, productID int, newStoc
 }
 
 func (o *OrderRepository) CreateOrder(tx *gorm.DB, orderDetails models.Order) (int, error) {
-	result := tx.Create(&orderDetails)
+	if orderDetails.CouponID != nil {
+		var count int64
+		if err := tx.Table("coupons").Where("id = ?", orderDetails.CouponID).Count(&count).Error; err != nil {
+			return 0, err
+		}
+		if count == 0 {
+			return 0, errors.New("invalid coupon id")
+		}
+	}
+	result := tx.Omit("OrderId").Create(&orderDetails)
 	if result.Error != nil {
 		return 0, result.Error
 	}
@@ -223,4 +233,49 @@ func (o *OrderRepository) UpdateQuantityOfProduct(tx *gorm.DB, orderProducts []m
 		}
 	}
 	return nil
+}
+
+func (o *OrderRepository) GetCouponDetails(couponCode string) (models.Coupon, error) {
+	var coupon models.Coupon
+	query := "SELECT id, coupon_code, discount, minimum_required, maximum_allowed, maximum_usage, expire_date FROM coupons WHERE coupon_code = $1"
+	err := o.DB.Raw(query, couponCode).Scan(&coupon)
+	if err != nil {
+		return models.Coupon{}, errors.New("coupon does not exist")
+	}
+	return coupon, nil
+}
+
+func (o *OrderRepository) CheckCouponUsage(userID uint, couponCode string) (int, error) {
+	var usageCount int
+	query := "SELECT COUNT(*) FROM orders WHERE user_id = $1 AND coupon = $2"
+	err := o.DB.Raw(query, userID, couponCode).Scan(&usageCount).Error
+	if err != nil {
+		return 0, err
+	}
+	return usageCount, nil
+}
+
+// func (o *OrderRepository) RecordCouponUsage(tx *gorm.DB, userID int, couponCode string) error {
+// 	type CouponUsage struct {
+// 		ID         uint      `gorm:"primarykey;autoIncrement"`
+// 		UserID     int       `gorm:"not null"`
+// 		CouponCode string    `gorm:"not null"`
+// 		UsedAt     time.Time `gorm:"not null"`
+// 	}
+// 	usage := CouponUsage{
+// 		UserID:     userID,
+// 		CouponCode: couponCode,
+// 		UsedAt:     time.Now(),
+// 	}
+// 	if err := tx.Create(&usage).Error; err != nil {
+// 		return fmt.Errorf("failed to record coupon usage: %w", err)
+// 	}
+// 	return nil
+// }
+
+func (o *OrderRepository) CheckCouponAppliedOrNot(tx *gorm.DB, userID int, couponID string) uint {
+	var exist uint
+	query := "SELECT COUNT(*) FROM orders WHERE user_id = ? AND coupon_code = ?"
+	tx.Raw(query, userID, couponID).Scan(&exist)
+	return exist
 }

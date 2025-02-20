@@ -71,3 +71,6 @@ func (pay *PaymentHandler) OnlinePaymentVerification(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Successfully updated payment details", order, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+func (pay *PaymentHandler) PaymentSuccess(c *gin.Context) {
+	c.HTML(http.StatusOK, "success.html", gin.H{})
+}

@@ -17,15 +17,17 @@ type OrderUseCase struct {
 	cartRepository   repository.CartRepository
 	walletRepository repository.WalletRepository
 	WalletUseCase    WalletUseCase
+	CouponRepo       repository.CouponRepository
 }
 
-func NewOrderUseCase(orderRepository repository.OrderRepository, userRepository repository.UserRepository, cartRepository repository.CartRepository, walletRepository repository.WalletRepository, walletUseCase WalletUseCase) *OrderUseCase {
+func NewOrderUseCase(orderRepository repository.OrderRepository, userRepository repository.UserRepository, cartRepository repository.CartRepository, walletRepository repository.WalletRepository, walletUseCase WalletUseCase, couponRepository repository.CouponRepository) *OrderUseCase {
 	return &OrderUseCase{
 		orderRepository:  orderRepository,
 		userRepository:   userRepository,
 		cartRepository:   cartRepository,
 		walletRepository: walletRepository,
 		WalletUseCase:    walletUseCase,
+		CouponRepo:       couponRepository,
 	}
 }
 func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, error) {
@@ -62,6 +64,33 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 	order.GrandTotal = grandTotal
 	order.FinalPrice = order.GrandTotal
 	order.OrderDate = time.Now()
+
+	if order.CouponCode != "" {
+		couponData, err := o.CouponRepo.CheckCouponExpired(tx, order.CouponCode)
+		if err != nil {
+			return models.Order{}, fmt.Errorf("failed to fetch coupon details: %w", err)
+		}
+		if order.FinalPrice < float64(couponData.MinimumRequired) || order.FinalPrice >= float64(couponData.MaximumAllowed) {
+			return models.Order{}, fmt.Errorf("order price does not meet coupon requirements (Total Price: %f, Coupon: %s, Maximum Allowed: %d)", order.FinalPrice, order.CouponCode, couponData.MaximumAllowed)
+		}
+		if couponData.EndDate.Before(time.Now()) {
+			return models.Order{}, errors.New("Coupon has expired")
+		}
+		if exist := o.orderRepository.CheckCouponAppliedOrNot(tx, order.UserID, order.CouponCode); exist >= couponData.MaximumUsage {
+			return models.Order{}, fmt.Errorf("coupon %s already applied %d times", order.CouponCode, exist)
+		}
+		order.CouponID = &couponData.ID
+		order.Discount = float64(couponData.Discount)
+
+		discount := (order.FinalPrice * float64(couponData.Discount)) / 100
+		if discount > float64(couponData.MaximumAllowed) {
+			discount = float64(couponData.MaximumAllowed)
+		}
+		order.FinalPrice = order.FinalPrice - discount
+		if order.FinalPrice < 0 {
+			order.FinalPrice = 0
+		}
+	}
 
 	//COD
 	switch order.PaymentMethod {
@@ -137,7 +166,7 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 			OrderID:    orderID,
 			ProductID:  item.ProductID,
 			Quantity:   item.Quantity,
-			TotalPrice: float64(item.Price) * float64(item.Quantity),
+			TotalPrice: (float64(item.Price) * float64(item.Quantity)) - (float64(item.Price)*float64(item.Quantity))*(order.Discount/100),
 		})
 	}
 

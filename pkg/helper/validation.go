@@ -56,3 +56,52 @@ func ValidatePassword(password models.ForgotPassword) error {
 
 	return nil
 }
+
+func ValidationErrorToText(err error) []string {
+	var errors []string
+
+	// Map field names to user-friendly labels
+	fieldNames := map[string]string{
+		"CouponCode":      "Coupon Code",
+		"Discount":        "Discount",
+		"MinimumRequired": "Minimum Required",
+		"MaximumAllowed":  "Maximum Allowed",
+		"MaximumUsage":    "Maximum Usage",
+		"ExpireDate":      "Expire Date",
+	}
+
+	for _, err := range err.(validator.ValidationErrors) {
+		var message string
+		field := err.Field()
+
+		// Get the user-friendly field name if it exists
+		if name, exists := fieldNames[field]; exists {
+			field = name
+		}
+
+		// Customize error messages for each validation tag
+		switch err.Tag() {
+		case "required":
+			message = fmt.Sprintf("%s is required.", field)
+		case "min":
+			message = fmt.Sprintf("%s cannot be less than %s.", field, err.Param())
+		case "max":
+			message = fmt.Sprintf("%s cannot be greater than %s.", field, err.Param())
+		case "oneof":
+			message = fmt.Sprintf("%s must be one of %s.", field, err.Param())
+		case "datetime":
+			message = fmt.Sprintf("%s must be in the format YYYY-MM-DD.", field)
+		case "gtcsfield":
+			message = fmt.Sprintf("%s must be greater than %s.", field, err.Param())
+		case "alphanum":
+			message = fmt.Sprintf("%s must be alphanumeric.", field)
+		case "len":
+			message = fmt.Sprintf("%s must be exactly %s characters long.", field, err.Param())
+		default:
+			message = fmt.Sprintf("%s is invalid.", field)
+		}
+
+		errors = append(errors, message)
+	}
+	return errors
+}
