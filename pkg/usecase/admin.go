@@ -191,6 +191,7 @@ func (ad *AdminUseCase) ChangeOrderStatus(orderID string, status string) (models
 		"pending":   true,
 		"shipped":   true,
 		"cancelled": true,
+		"return":    true,
 		"delivered": true,
 		"failed":    true,
 	}

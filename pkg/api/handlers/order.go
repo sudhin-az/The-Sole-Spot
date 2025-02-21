@@ -116,3 +116,53 @@ func (o *OrderHandler) CancelOrders(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Cancel Successful", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+func (o *OrderHandler) CancelOrderItem(c *gin.Context) {
+	orderID := c.Query("order_id")
+	if orderID == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Order ID is required", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+	userID, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "User ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+	userid := userID.(int)
+
+	orderDetails, err := o.orderUseCase.CancelOrderItem(orderID, userid)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "failed to fetch the order details", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "order details retrieved successfully", orderDetails, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (o *OrderHandler) ReturnUserOrder(c *gin.Context) {
+	orderID := c.Query("order_id")
+	if orderID == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Order ID is required", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+	userID, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "User ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+	userid := userID.(int)
+
+	err := o.orderUseCase.ReturnUserOrder(orderID, userid)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "failed to Return the order", nil, err.Error())
+		c.JSON(http.StatusBadRequest, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "order returned successfully", nil, nil)
+	c.JSON(http.StatusOK, successRes)
+}

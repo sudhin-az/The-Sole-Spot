@@ -18,11 +18,6 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 	router.GET("/listproducts", userHandler.GetProducts)
 	router.GET("/listcategory", userHandler.ListCategory)
 
-	//payment
-	router.GET("/payment", paymentHandler.CreatePayment)
-	router.POST("/payment/verify", paymentHandler.OnlinePaymentVerification)
-	router.GET("/payment/success", paymentHandler.PaymentSuccess)
-
 	//addresses
 	address := router.Group("/addresses")
 	{
@@ -62,7 +57,13 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 		order.POST("/placeorder", orderHandler.OrderItemsFromCart)
 		order.GET("/vieworders", orderHandler.ViewOrders)
 		order.PUT("/cancelorders", orderHandler.CancelOrders)
+		order.PUT("/cancelOrderItem", orderHandler.CancelOrderItem)
+		order.PUT("/returnorder", orderHandler.ReturnUserOrder)
 	}
+
+	router.GET("/payment", paymentHandler.CreatePayment)
+	router.POST("/payment/verify", paymentHandler.OnlinePaymentVerification)
+	router.GET("/payment/success", paymentHandler.PaymentSuccess)
 
 	//Wallet
 	wallet := router.Group("/wallet")

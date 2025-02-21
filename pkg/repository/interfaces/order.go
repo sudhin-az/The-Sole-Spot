@@ -28,6 +28,8 @@ type OrderRepository interface {
 	GetPriceoftheproduct(orderID string) (float64, error)
 	GetProductDetailsFromOrders(orderID string) ([]models.OrderProducts, error)
 	UpdateQuantityOfProduct(orderProducts []models.OrderProducts) error
+	GetSingleOrder(orderID string, userID string) (models.Order, error)
+	UpdateUserOrderReturn(orderItemID string, userID string) (domain.OrderItem, error)
 
 	GetCouponDetails(couponCode string) (models.Coupon, error)
 	CheckCouponUsage(userID uint, couponCode string) (int, error)

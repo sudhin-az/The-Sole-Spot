@@ -235,6 +235,28 @@ func (o *OrderRepository) UpdateQuantityOfProduct(tx *gorm.DB, orderProducts []m
 	return nil
 }
 
+func (o *OrderRepository) CancelOrderItem(orderID string, userID int) (domain.OrderItem, error) {
+	var SingleOrderDetails domain.OrderItem
+	query := "SELECT * FROM orders INNER JOIN order_products ON orders.order_id=order_products.order_id INNER JOIN products ON products.id = order_products.product_id INNER JOIN addresses ON addresses.id=orders.address_id WHERE order_products.id=? AND orders.user_id=?"
+	result := o.DB.Raw(query, orderID, userID).Scan(&SingleOrderDetails)
+	if result.Error != nil {
+		return domain.OrderItem{}, errors.New("face some issue while get single order")
+	}
+	return SingleOrderDetails, nil
+}
+
+func (o *OrderRepository) UpdateUserOrderReturn(tx *gorm.DB, orderID int, userID int) error {
+	query := "UPDATE orders SET order_status = 'returned', payment_status = 'refunded' WHERE order_id = ? AND user_id = ?"
+	result := tx.Exec(query, orderID, userID)
+	if result.Error != nil {
+		return errors.New("error updating order return status")
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("no rows updated, check if order ID and user ID are correct")
+	}
+	return nil
+}
+
 func (o *OrderRepository) GetCouponDetails(couponCode string) (models.Coupon, error) {
 	var coupon models.Coupon
 	query := "SELECT id, coupon_code, discount, minimum_required, maximum_allowed, maximum_usage, expire_date FROM coupons WHERE coupon_code = $1"

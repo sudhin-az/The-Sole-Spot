@@ -322,3 +322,108 @@ func (o *OrderUseCase) CancelOrders(orderID string, userID int) error {
 
 	return nil
 }
+
+func (o *OrderUseCase) CancelOrderItem(orderID string, userID int) (domain.OrderItem, error) {
+	singleOrder, err := o.orderRepository.CancelOrderItem(orderID, userID)
+	if err != nil {
+		return domain.OrderItem{}, err
+	}
+	return singleOrder, nil
+}
+
+func (o *OrderUseCase) ReturnUserOrder(orderID string, userID int) error {
+	orderIDInt, err := strconv.Atoi(orderID)
+	if err != nil {
+		return fmt.Errorf("invalid order ID format: %w", err)
+	}
+
+	orderUserID, err := o.orderRepository.UserOrderRelationship(orderIDInt, userID)
+	if err != nil {
+		return errors.New("order item does not exist")
+	}
+	if orderUserID != userID {
+		return errors.New("you are not authorized to return this order!")
+	}
+
+	tx, err := o.orderRepository.BeginTransaction()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		_ = o.orderRepository.RollbackTransaction(tx)
+	}()
+
+	orderStatus, err := o.orderRepository.GetOrderStatus(tx, orderIDInt)
+	if err != nil {
+		return err
+	}
+	if orderStatus == "cancelled" {
+		return errors.New("order was cancelled, return not possible!")
+	}
+	if orderStatus == "returned" {
+		return errors.New("order returned already!")
+	}
+	if orderStatus != "delivered" {
+		return errors.New("order not delivered!")
+	}
+
+	err = o.orderRepository.UpdateUserOrderReturn(tx, orderIDInt, userID)
+	if err != nil {
+		return errors.New("return failed!")
+	}
+
+	orderProductDetails, err := o.orderRepository.GetProductDetailsFromOrders(tx, orderIDInt)
+	if err != nil {
+		return err
+	}
+
+	var totalRefundAmount float64
+
+	for _, product := range orderProductDetails {
+		totalRefundAmount += product.FinalPrice
+	}
+
+	// if totalRefundAmount <= 0 {
+	// 	return errors.New("refund amount is zero; cannot update wallet")
+	// }
+
+	newBalance, err := o.walletRepository.CreateOrUpdateWallet(tx, userID, uint(totalRefundAmount))
+	if err != nil {
+		return err
+	}
+	walletTxn := models.WalletTransaction{
+		UserID:      userID,
+		Credit:      uint(totalRefundAmount),
+		Debit:       0,
+		EventDate:   time.Now(),
+		TotalAmount: newBalance,
+	}
+
+	err = o.walletRepository.WalletTransaction(tx, walletTxn)
+	if err != nil {
+		return err
+	}
+	for _, product := range orderProductDetails {
+		availableStock, err := o.orderRepository.GetProductStock(tx, product.ProductID)
+		if err != nil {
+			return err
+		}
+		newStock := availableStock + product.Quantity
+		err = o.orderRepository.UpdateProductStock(tx, product.ProductID, newStock)
+		if err != nil {
+			return errors.New("failed to restore product stock")
+		}
+	}
+
+	err = o.orderRepository.UpdateQuantityOfProduct(tx, orderProductDetails)
+	if err != nil {
+		return err
+	}
+
+	err = o.orderRepository.CommitTransaction(tx)
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
+
+}
