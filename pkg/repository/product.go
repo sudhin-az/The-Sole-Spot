@@ -23,10 +23,10 @@ func (p *ProductRepository) AddProduct(product models.AddProduct) (models.AddPro
 	var productResponse models.AddProduct
 
 	err := p.DB.Raw(
-		`INSERT INTO products (category_id, name, stock, quantity, price) 
-        VALUES (?, ?, ?, ?, ?) 
-        RETURNING id, category_id, name, stock, quantity, price`,
-		product.CategoryID, product.Name, product.Stock, product.Quantity, product.Price).Scan(&productResponse).Error
+		`INSERT INTO products (category_id, name, stock, quantity, price, offer_price) 
+        VALUES (?, ?, ?, ?, ?, ?) 
+        RETURNING id, category_id, name, stock, quantity, price, offer_price`,
+		product.CategoryID, product.Name, product.Stock, product.Quantity, product.Price, product.OfferPrice).Scan(&productResponse).Error
 
 	if err != nil {
 		return models.AddProduct{}, err
@@ -37,8 +37,8 @@ func (p *ProductRepository) AddProduct(product models.AddProduct) (models.AddPro
 func (p *ProductRepository) UpdateProduct(products models.ProductResponse, productID int) (models.ProductResponse, error) {
 	var productResponse models.ProductResponse
 
-	err := p.DB.Raw("UPDATE products SET category_id = ?, name = ?, stock= ?, quantity = ?, price = ? WHERE id = ? RETURNING id, category_id, name, stock, quantity, price",
-		products.Category_Id, products.Name, products.Stock, products.Quantity, products.Price, productID).Scan(&productResponse).Error
+	err := p.DB.Raw("UPDATE products SET category_id = ?, name = ?, stock= ?, quantity = ?, price = ?, offer_price = ? WHERE id = ? RETURNING id, category_id, name, stock, quantity, price, offer_price",
+		products.Category_Id, products.Name, products.Stock, products.Quantity, products.Price, products.OfferPrice, productID).Scan(&productResponse).Error
 	if err != nil {
 		return models.ProductResponse{}, fmt.Errorf("error updating product: %w", err)
 	}

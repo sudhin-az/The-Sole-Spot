@@ -79,6 +79,7 @@ type Address struct {
 	DeletedAt gorm.DeletedAt
 }
 type ForgotPassword struct {
+	Otp             string `json:"otp" validate:"len=6"`
 	Password        string `json:"password" validate:"required,min=8,max=32"`
 	ConfirmPassword string `json:"confirmpassword" validate:"required,min=8,max=32"`
 }

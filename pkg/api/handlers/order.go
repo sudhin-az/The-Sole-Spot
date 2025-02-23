@@ -118,9 +118,9 @@ func (o *OrderHandler) CancelOrders(c *gin.Context) {
 }
 
 func (o *OrderHandler) CancelOrderItem(c *gin.Context) {
-	orderID := c.Query("order_id")
-	if orderID == "" {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Order ID is required", nil, nil)
+	orderItemID := c.Query("order_item_id")
+	if orderItemID == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Order Item ID is required", nil, nil)
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
@@ -132,13 +132,13 @@ func (o *OrderHandler) CancelOrderItem(c *gin.Context) {
 	}
 	userid := userID.(int)
 
-	orderDetails, err := o.orderUseCase.CancelOrderItem(orderID, userid)
+	orderDetails, err := o.orderUseCase.CancelOrderItem(orderItemID, userid)
 	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "failed to fetch the order details", nil, err.Error())
+		errorRes := response.ClientResponse(http.StatusBadRequest, "Failed to cancel order item", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errorRes)
 		return
 	}
-	successRes := response.ClientResponse(http.StatusOK, "order details retrieved successfully", orderDetails, nil)
+	successRes := response.ClientResponse(http.StatusOK, "Order item cancelled successfully", orderDetails, nil)
 	c.JSON(http.StatusOK, successRes)
 }
 

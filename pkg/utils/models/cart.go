@@ -12,6 +12,7 @@ type Cart struct {
 	ProductID  int            `json:"product_id"`
 	Quantity   int            `json:"quantity"`
 	Price      int            `json:"price"`
+	OfferPrice int            `json:"offer_price"`
 	TotalPrice float64        `json:"total_price"`
 	CreatedAt  time.Time      `json:"created_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`

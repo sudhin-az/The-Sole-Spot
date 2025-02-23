@@ -32,6 +32,7 @@ func (p *ProductUseCase) AddProduct(product models.AddProduct) (models.ProductRe
 		Stock:       products.Stock,
 		Price:       products.Price,
 		Quantity:    products.Quantity,
+		OfferPrice:  product.OfferPrice,
 	}
 
 	return productResponse, nil

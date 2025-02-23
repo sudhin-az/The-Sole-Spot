@@ -58,7 +58,7 @@ func main() {
 	productHandler := handlers.NewProductHandler(*productUseCase)
 
 	cartRepo := repository.NewCartRepository(database)
-	cartUseCase := usecase.NewCartUseCase(*cartRepo, *productRepo)
+	cartUseCase := usecase.NewCartUseCase(*cartRepo, *productRepo, *categoryRepo)
 	cartHandler := handlers.NewCartHandler(*cartUseCase)
 
 	walletRepo := repository.NewWalletRepository(database)

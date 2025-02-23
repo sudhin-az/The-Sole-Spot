@@ -20,7 +20,7 @@ func NewCategoryRepository(DB *gorm.DB) *CategoryRepository {
 func (cat *CategoryRepository) AddCategory(category domain.Category) (domain.Category, error) {
 	var categoryResponse domain.Category
 
-	err := cat.DB.Raw("INSERT INTO categories (category, description) VALUES (?, ?) RETURNING id, category, description", category.Category, category.Description).Scan(&categoryResponse).Error
+	err := cat.DB.Raw("INSERT INTO categories (category, description, category_discount) VALUES (?, ?, ?) RETURNING id, category, description, category_discount", category.Category, category.Description, category.CategoryDiscount).Scan(&categoryResponse).Error
 	if err != nil {
 		return domain.Category{}, err
 	}
@@ -35,11 +35,11 @@ func (cat *CategoryRepository) UpdateCategory(category domain.Category, category
 	}
 
 	err := cat.DB.Raw(`
-        UPDATE categories 
-        SET category = ?, description = ? 
-        WHERE id = ? 
-        RETURNING id, category, description`,
-		category.Category, category.Description, categoryID).Scan(&updatedCategory).Error
+    UPDATE categories 
+    SET category = ?, description = ?, category_discount = ?
+    WHERE id = ? 
+    RETURNING id, category, description, category_discount`,
+		category.Category, category.Description, category.CategoryDiscount, categoryID).Scan(&updatedCategory).Error
 
 	if err != nil {
 		return domain.Category{}, err
@@ -55,9 +55,19 @@ func (cat *CategoryRepository) UpdateCategory(category domain.Category, category
 func (cat *CategoryRepository) DeleteCategory(categoryID int) error {
 	var categories domain.Category
 
-	err := cat.DB.Where("id =?", categoryID).Delete(&categories)
-	if err.RowsAffected < 1 {
-		return errors.New("the id is not existing")
+	result := cat.DB.Where("id = ?", categoryID).Delete(&categories)
+	if result.RowsAffected < 1 {
+		return errors.New("the ID does not exist")
 	}
 	return nil
+}
+
+func (p *CategoryRepository) GetCategoryByID(categoryID int) (domain.Category, error) {
+
+	var categoryResponse domain.Category
+	err := p.DB.Raw("SELECT * FROM categories WHERE id = ?", categoryID).Scan(&categoryResponse).Error
+	if err != nil {
+		return domain.Category{}, err
+	}
+	return categoryResponse, nil
 }

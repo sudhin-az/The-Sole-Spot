@@ -8,14 +8,16 @@ import (
 )
 
 type CartUseCase struct {
-	cartRepository    repository.CartRepository
-	productRepository repository.ProductRepository
+	cartRepository     repository.CartRepository
+	productRepository  repository.ProductRepository
+	categoryRepository repository.CategoryRepository
 }
 
-func NewCartUseCase(cartRepository repository.CartRepository, productrepository repository.ProductRepository) *CartUseCase {
+func NewCartUseCase(cartRepository repository.CartRepository, productrepository repository.ProductRepository, categoryRepository repository.CategoryRepository) *CartUseCase {
 	return &CartUseCase{
-		cartRepository:    cartRepository,
-		productRepository: productrepository,
+		cartRepository:     cartRepository,
+		productRepository:  productrepository,
+		categoryRepository: categoryRepository,
 	}
 }
 
@@ -81,11 +83,19 @@ func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (model
 		return models.CartResponse{}, errors.New("quantity limit exceeded")
 	}
 
+	category, err := cu.categoryRepository.GetCategoryByID(product.Category_Id)
+	if err != nil {
+		return models.CartResponse{}, errors.New("category not found")
+	}
+
+	discount := category.CategoryDiscount
+	discountedPrice := float64(product.OfferPrice) * (1 - (float64(discount) / 100))
+	totalPrice := float64(quantity) * discountedPrice
+
 	existingCartItem, _ := cu.cartRepository.GetCartItem(userID, productID)
 	if existingCartItem != nil {
-
 		existingCartItem.Quantity += quantity
-		existingCartItem.TotalPrice = float64(existingCartItem.Quantity) * product.Price
+		existingCartItem.TotalPrice = float64(existingCartItem.Quantity) * discountedPrice
 		updatedCart, err := cu.cartRepository.UpdateCart(*existingCartItem)
 		if err != nil {
 			return models.CartResponse{}, err
@@ -97,12 +107,12 @@ func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (model
 	}
 
 	newCartItem := models.Cart{
-		UserID:    userID,
-		ProductID: productID,
-		Quantity:  quantity,
-
+		UserID:     userID,
+		ProductID:  productID,
+		Quantity:   quantity,
 		Price:      int(product.Price),
-		TotalPrice: float64(quantity) * product.Price,
+		OfferPrice: int(discountedPrice),
+		TotalPrice: totalPrice,
 	}
 
 	addedCart, err := cu.cartRepository.AddToCart(newCartItem)

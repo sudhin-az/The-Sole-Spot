@@ -347,6 +347,11 @@ func (uc *UserUseCase) ForgotPassword(email string, input models.ForgotPassword)
 	if err != nil {
 		return models.User{}, errors.New("user not found")
 	}
+
+	err = uc.userRepo.VerifyOTPAndMoveUser(email, input.Otp)
+	if err != nil {
+		return models.User{}, err
+	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return models.User{}, errors.New("failed to hash password")

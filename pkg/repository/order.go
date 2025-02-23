@@ -134,6 +134,27 @@ func (o *OrderRepository) GetProductDetailsFromOrders(tx *gorm.DB, orderID int) 
 	return orderProductDetails, nil
 }
 
+func (o *OrderRepository) GetOrderItemPrice(tx *gorm.DB, orderItemID int) (float64, error) {
+	var price float64
+	err := tx.Raw("select total_price from order_items where id = ?", orderItemID).Scan(&price).Error
+	if err != nil {
+		return 0.0, err
+	}
+	return price, nil
+}
+
+func (o *OrderRepository) GetOrderItemDetails(tx *gorm.DB, orderItemID int) (int, int, error) {
+	var orderItem struct {
+		productID int
+		quantity  int
+	}
+	err := tx.Raw("SELECT product_id, quantity FROM order_items WHERE id = ?", orderItemID).Scan(&orderItem).Error
+	if err != nil {
+		return 0, 0, err
+	}
+	return orderItem.productID, orderItem.quantity, nil
+}
+
 func (o *OrderRepository) GetOrderStatus(tx *gorm.DB, orderID int) (string, error) {
 	var OrderStatus string
 	err := tx.Raw("SELECT order_status FROM orders WHERE order_id = ?", orderID).Scan(&OrderStatus).Error
@@ -235,14 +256,12 @@ func (o *OrderRepository) UpdateQuantityOfProduct(tx *gorm.DB, orderProducts []m
 	return nil
 }
 
-func (o *OrderRepository) CancelOrderItem(orderID string, userID int) (domain.OrderItem, error) {
-	var SingleOrderDetails domain.OrderItem
-	query := "SELECT * FROM orders INNER JOIN order_products ON orders.order_id=order_products.order_id INNER JOIN products ON products.id = order_products.product_id INNER JOIN addresses ON addresses.id=orders.address_id WHERE order_products.id=? AND orders.user_id=?"
-	result := o.DB.Raw(query, orderID, userID).Scan(&SingleOrderDetails)
+func (o *OrderRepository) CancelOrderItem(tx *gorm.DB, orderItemID int) error {
+	result := tx.Exec("DELETE FROM order_items WHERE id = ?", orderItemID)
 	if result.Error != nil {
-		return domain.OrderItem{}, errors.New("face some issue while get single order")
+		return errors.New("error cancelling order item")
 	}
-	return SingleOrderDetails, nil
+	return nil
 }
 
 func (o *OrderRepository) UpdateUserOrderReturn(tx *gorm.DB, orderID int, userID int) error {

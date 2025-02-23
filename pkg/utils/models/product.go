@@ -13,6 +13,7 @@ type AddProduct struct {
 	Stock      int     `json:"stock"`
 	Quantity   int     `json:"quantity"`
 	Price      float64 `json:"price"`
+	OfferPrice float64 `json:"offer_price"`
 	CreatedAt  time.Time
 	DeletedAt  gorm.DeletedAt
 }
@@ -23,6 +24,7 @@ type ProductResponse struct {
 	Stock       int     `json:"stock"`
 	Quantity    int     `json:"quantity"`
 	Price       float64 `json:"price"`
+	OfferPrice  float64 `json:"offer_price"`
 	CreatedAt   time.Time
 	DeletedAt   gorm.DeletedAt
 }
