@@ -26,4 +26,6 @@ type AdminRepository interface {
 	Getshipmentstatus(orderID string) (string, error)
 	UpdatequantityOfproduct(orderProducts []models.OrderProducts) error
 	ChangeOrderStatus(orderID string, Status string) (models.Order, error)
+
+	GetTotalOrders(fromDate, toDate, PaymentStatus string) (models.OrderCount, models.AmountInformation, error)
 }

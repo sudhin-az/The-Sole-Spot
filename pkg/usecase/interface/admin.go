@@ -14,4 +14,7 @@ type AdminUseCase interface {
 	GetAllOrderDetails() ([]models.FullOrderDetails, error)
 	CancelOrders(orderID string, userID int) error
 	ChangeOrderStatus(orderID string, Status string) (models.Order, error)
+
+	GetDateRange(startDate, endDate, limit string) (string, string)
+	TotalOrders(fromDate, toDate, PaymentStatus string) (models.OrderCount, models.AmountInformation, error)
 }

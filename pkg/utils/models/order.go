@@ -78,3 +78,20 @@ type CombinedOrderDetails struct {
 	Street        string  `json:"street"`
 	City          string  `json:"city"`
 }
+
+type OrderCount struct {
+	TotalOrder     uint `json:"total_order"`
+	TotalPending   uint `json:"total_pending"`
+	TotalConfirmed uint `json:"total_confirmed"`
+	TotalShipped   uint `json:"total_shipped"`
+	TotalDelivered uint `json:"total_delivered"`
+	TotalCancelled uint `json:"total_cancelled"`
+	TotalReturned  uint `json:"total_returned"`
+}
+
+type AmountInformation struct {
+	TotalAmountBeforeDeduction float64 `json:"total_amount_before_deduction"`
+	TotalCouponDeduction       float64 `json:"total_coupon_deduction"`
+	TotalProuctOfferDeduction  float64 `json:"total_product_offer_deduction"`
+	TotalAmountAfterDeduction  float64 `json:"total_amount_after_deduction"`
+}

@@ -4,6 +4,7 @@ import (
 	"ecommerce_clean_architecture/pkg/usecase"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"ecommerce_clean_architecture/pkg/utils/response"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -188,4 +189,82 @@ func (ad *AdminHandler) ChangeOrderStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (ad *AdminHandler) SalesReport(c *gin.Context) {
+	adminID, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "Admin ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+	fmt.Println("AdminId: ", adminID)
+
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	limit := c.Query("limit")
+	orderStatus := c.Query("order_status")
+
+	if startDate == "" && endDate == "" && limit == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Please provide start and end date or a valid limit (day, week, month, year).", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	startDate, endDate = ad.adminUseCase.GetDateRange(startDate, endDate, limit)
+
+	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, orderStatus)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error processing orders", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "Successfully created sales report", gin.H{
+		"result": result,
+		"amount": amount,
+	}, nil)
+
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
+	_, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "Admin ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	limit := c.Query("limit")
+	orderStatus := c.Query("order_status")
+
+	if startDate == "" && endDate == "" && limit == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Please provide start and end date or a valid limit (day, week, month, year).", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	startDate, endDate = ad.adminUseCase.GetDateRange(startDate, endDate, limit)
+	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, orderStatus)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error processing orders", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	// Call PDF Generation Function
+	pdfData, err := ad.adminUseCase.GenerateSalesReportPDF(result, amount, startDate, endDate, orderStatus)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error generating PDF", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	// Send PDF Response
+	c.Header("Content-Disposition", "attachment; filename=sales_report.pdf")
+	c.Header("Content-Type", "application/pdf")
+	c.Data(http.StatusOK, "application/pdf", pdfData)
 }

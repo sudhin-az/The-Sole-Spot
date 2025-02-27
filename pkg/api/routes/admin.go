@@ -44,6 +44,13 @@ func AdminRoutes(router *gin.RouterGroup, adminHandler *handlers.AdminHandler, c
 		orders.PUT("/changeorderstatus", adminHandler.ChangeOrderStatus)
 	}
 
+	salesreportmanagement := router.Group("/report")
+	{
+		salesreportmanagement.Use(middleware.AdminMiddleware())
+		salesreportmanagement.GET("/get", adminHandler.SalesReport)
+		salesreportmanagement.GET("/generateSalesreport", adminHandler.GenerateSalesReport)
+	}
+
 	coupon := router.Group("/coupons")
 	{
 		coupon.Use(middleware.AdminMiddleware())

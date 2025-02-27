@@ -4,6 +4,7 @@ import (
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -246,4 +247,75 @@ func (ad *AdminRepository) ChangeOrderStatus(orderID string, status string) (mod
 	}
 
 	return changeOrderStatus, nil
+}
+
+func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) (models.OrderCount, models.AmountInformation, error) {
+	var orders []models.Order
+
+	startDate, err := time.Parse("2006-01-02", fromDate)
+	if err != nil {
+		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error parsing start date: %v", err)
+	}
+
+	endDate, err := time.Parse("2006-01-02", toDate)
+	if err != nil {
+		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error parsing end date: %v", err)
+	}
+
+	endDate = endDate.Add(24*time.Hour - time.Nanosecond)
+
+	fmt.Println("Fetching orders between:", startDate, "and", endDate, "with status:", orderStatus)
+
+	query := ad.DB.Where("order_date BETWEEN ? AND ?", startDate, endDate)
+	if orderStatus != "" {
+		query = query.Where("order_status = ?", orderStatus)
+	}
+
+	err = query.Find(&orders).Error
+	if err != nil {
+		fmt.Println("Query Error:", err)
+		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error fetching orders: %v", err)
+	}
+
+	if len(orders) == 0 {
+		fmt.Println("No orders found for given range.")
+		return models.OrderCount{TotalOrder: 0}, models.AmountInformation{}, nil
+	}
+
+	var accountInfo models.AmountInformation
+	for _, order := range orders {
+		accountInfo.TotalAmountBeforeDeduction += order.GrandTotal
+		accountInfo.TotalCouponDeduction += order.Discount
+		accountInfo.TotalProuctOfferDeduction += order.GrandTotal - order.FinalPrice - order.Discount
+		accountInfo.TotalAmountAfterDeduction += order.FinalPrice
+	}
+
+	var statusCounts []struct {
+		OrderStatus string
+		Count       int64
+	}
+	if err := ad.DB.Raw(`
+		SELECT order_status, COUNT(*) AS count 
+		FROM orders 
+		WHERE order_date BETWEEN ? AND ? 
+		GROUP BY order_status`, startDate, endDate).Scan(&statusCounts).Error; err != nil {
+		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error counting order items: %v", err)
+	}
+
+	orderStatusCounts := make(map[string]int64)
+	var totalCount int64
+	for _, sc := range statusCounts {
+		orderStatusCounts[sc.OrderStatus] = sc.Count
+		totalCount += sc.Count
+	}
+
+	return models.OrderCount{
+		TotalOrder:     uint(totalCount),
+		TotalPending:   uint(orderStatusCounts[models.Pending]),
+		TotalConfirmed: uint(orderStatusCounts[models.Confirm]),
+		TotalShipped:   uint(orderStatusCounts[models.Shipped]),
+		TotalDelivered: uint(orderStatusCounts[models.Delivered]),
+		TotalCancelled: uint(orderStatusCounts[models.Cancelled]),
+		TotalReturned:  uint(orderStatusCounts[models.Return]),
+	}, accountInfo, nil
 }

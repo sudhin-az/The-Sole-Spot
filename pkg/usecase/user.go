@@ -348,7 +348,28 @@ func (uc *UserUseCase) ForgotPassword(email string, input models.ForgotPassword)
 		return models.User{}, errors.New("user not found")
 	}
 
-	err = uc.userRepo.VerifyOTPAndMoveUser(email, input.Otp)
+	err = utils.SendOTPEmail(email, input.Otp)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	otp := utils.GenerateOTP()
+	otpExpiry := time.Now().Add(3 * time.Minute)
+
+	// storedOTP, otpExpiry, err := uc.userRepo.GetOTP(email)
+	// if err != nil {
+	// 	return models.User{}, errors.New("OTP not found")
+	// }
+
+	if time.Now().After(otpExpiry) {
+		return models.User{}, errors.New("OTP expired")
+	}
+
+	// if storedOTP != otp {
+	// 	return models.User{}, errors.New("invalid OTP")
+	// }
+
+	err = uc.userRepo.VerifyOTPAndMoveUser(email, otp)
 	if err != nil {
 		return models.User{}, err
 	}

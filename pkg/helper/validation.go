@@ -2,7 +2,6 @@ package helper
 
 import (
 	"ecommerce_clean_architecture/pkg/utils/models"
-	"errors"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
@@ -47,12 +46,12 @@ func ValidatePassword(password models.ForgotPassword) error {
 	if len(password.Password) < 5 {
 		validationErrors = append(validationErrors, "Password must be at least 5 characters long")
 	}
-	if password.Password != password.ConfirmPassword {
-		return errors.New("password do not match")
-	}
-	if password.Password == "" || password.ConfirmPassword == "" {
-		return errors.New("password cannot be empty")
-	}
+	// if password.Password != password.ConfirmPassword {
+	// 	return errors.New("password do not match")
+	// }
+	// if password.Password == "" || password.ConfirmPassword == "" {
+	// 	return errors.New("password cannot be empty")
+	// }
 
 	return nil
 }

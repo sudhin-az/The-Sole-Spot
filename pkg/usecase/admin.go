@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"bytes"
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/helper"
 	"ecommerce_clean_architecture/pkg/repository"
@@ -8,8 +9,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
+	"time"
 
+	"github.com/jung-kurt/gofpdf"
+	"github.com/wcharczuk/go-chart"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -234,4 +239,183 @@ func (ad *AdminUseCase) ChangeOrderStatus(orderID string, status string) (models
 		return models.Order{}, fmt.Errorf("could not getting updated order status: %w", err)
 	}
 	return updateOrder, nil
+}
+
+func (ad *AdminUseCase) GetDateRange(startDate, endDate, limit string) (string, string) {
+	today := time.Now()
+	switch limit {
+	case "day":
+		startDate = today.AddDate(0, 0, -1).Format("2006-01-02")
+		endDate = today.Format("2006-01-02")
+	case "week":
+		startOfWeek := today.AddDate(0, 0, -int(today.Weekday()))
+		startDate = startOfWeek.Format("2006-01-02")
+		endDate = today.Format("2006-01-02")
+	case "month":
+		startDate = time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location()).Format("2006-01-02")
+		endDate = time.Date(today.Year(), today.Month()+1, 0, 0, 0, 0, 0, today.Location()).Format("2006-01-02")
+	case "year":
+		startDate = time.Date(today.Year(), 1, 1, 0, 0, 0, 0, today.Location()).Format("2006-01-02")
+		endDate = time.Date(today.Year(), 12, 31, 0, 0, 0, 0, today.Location()).Format("2006-01-02")
+	}
+	return startDate, endDate
+}
+
+func (ad *AdminUseCase) TotalOrders(fromDate, toDate, orderStatus string) (models.OrderCount, models.AmountInformation, error) {
+	orders, amount, err := ad.adminrepository.GetTotalOrders(fromDate, toDate, orderStatus)
+	if err != nil {
+		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("failed to get total orders: %w", err)
+	}
+	return orders, amount, nil
+}
+
+func (ad *AdminUseCase) GenerateSalesReportPDF(orderCount models.OrderCount, amountInfo models.AmountInformation, startDate, endDate, paymentStatus string) ([]byte, error) {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	// Title
+	pdf.SetFont("Arial", "B", 20)
+	pdf.CellFormat(0, 10, "Sales Report", "", 1, "C", false, 0, "")
+	pdf.Ln(10)
+
+	// Report Details
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(40, 10, "Report Duration:", "", 1, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 12)
+	pdf.CellFormat(0, 10, "Start Date: "+startDate, "", 1, "L", false, 0, "")
+	pdf.CellFormat(0, 10, "End Date: "+endDate, "", 1, "L", false, 0, "")
+	pdf.CellFormat(0, 10, "Payment Status: "+paymentStatus, "", 1, "L", false, 0, "")
+	pdf.Ln(12)
+
+	// Summary Information Table
+	pdf.SetFont("Arial", "B", 14)
+	pdf.Cell(0, 10, "Summary Information")
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(90, 10, "Description", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(60, 10, "Amount", "1", 0, "C", false, 0, "")
+	pdf.Ln(-1)
+
+	pdf.SetFont("Arial", "", 12)
+	summaryData := map[string]string{
+		"Total Orders":                  strconv.Itoa(int(orderCount.TotalOrder)),
+		"Total Amount Before Deduction": fmt.Sprintf("%.2f", amountInfo.TotalAmountBeforeDeduction),
+		"Total Coupon Deduction":        fmt.Sprintf("%.2f", amountInfo.TotalCouponDeduction),
+		"Total Product Offer Deduction": fmt.Sprintf("%.2f", amountInfo.TotalProuctOfferDeduction),
+		"Total Amount After Deduction":  fmt.Sprintf("%.2f", amountInfo.TotalAmountAfterDeduction),
+	}
+
+	for desc, amount := range summaryData {
+		pdf.CellFormat(90, 10, desc, "1", 0, "L", false, 0, "")
+		pdf.CellFormat(60, 10, amount, "1", 0, "R", false, 0, "")
+		pdf.Ln(-1)
+	}
+	pdf.Ln(10)
+
+	// Order History Table
+	pdf.SetFont("Arial", "B", 14)
+	pdf.Cell(0, 10, "Order History Details")
+	pdf.Ln(8)
+
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(60, 10, "Status", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(60, 10, "Count", "1", 0, "C", false, 0, "")
+	pdf.Ln(-1)
+
+	pdf.SetFont("Arial", "", 12)
+	orderHistory := map[string]int{
+		"Pending":   int(orderCount.TotalPending),
+		"Confirmed": int(orderCount.TotalConfirmed),
+		"Shipped":   int(orderCount.TotalShipped),
+		"Delivered": int(orderCount.TotalDelivered),
+		"Cancelled": int(orderCount.TotalCancelled),
+		"Returned":  int(orderCount.TotalReturned),
+	}
+
+	for status, count := range orderHistory {
+		pdf.CellFormat(60, 10, status, "1", 0, "L", false, 0, "")
+		pdf.CellFormat(60, 10, strconv.Itoa(count), "1", 0, "R", false, 0, "")
+		pdf.Ln(-1)
+	}
+	pdf.Ln(10)
+
+	// Prepare Chart Data
+	chartData := []chart.Value{
+		{Value: float64(orderCount.TotalPending), Label: "Pending"},
+		{Value: float64(orderCount.TotalConfirmed), Label: "Confirmed"},
+		{Value: float64(orderCount.TotalShipped), Label: "Shipped"},
+		{Value: float64(orderCount.TotalDelivered), Label: "Delivered"},
+		{Value: float64(orderCount.TotalCancelled), Label: "Cancelled"},
+		{Value: float64(orderCount.TotalReturned), Label: "Returned"},
+	}
+
+	// Validate Chart Data
+	validData := false
+	for _, data := range chartData {
+		if data.Value > 0 {
+			validData = true
+			break
+		}
+	}
+
+	if validData {
+		// Create bar chart
+		barChart := chart.BarChart{
+			Width:  500,
+			Height: 300,
+			Background: chart.Style{
+				Padding: chart.Box{Top: 10, Left: 10, Right: 10, Bottom: 10},
+			},
+			Bars: chartData,
+		}
+
+		chartFile, err := os.Create("temp_chart.png")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create chart file: %v", err)
+		}
+		defer chartFile.Close()
+		defer os.Remove("temp_chart.png") // Cleanup after use
+
+		err = barChart.Render(chart.PNG, chartFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate bar chart: %v", err)
+		}
+
+		// Add heading for the bar chart
+		pdf.SetFont("Arial", "B", 14)
+		pdf.CellFormat(0, 10, "Order Status Distribution", "", 1, "C", false, 0, "")
+		pdf.Ln(5)
+
+		// Center the chart
+		pageWidth, _ := pdf.GetPageSize()
+		chartWidth, chartHeight := 100.0, 60.0
+		chartX := (pageWidth - chartWidth) / 2
+
+		pdf.ImageOptions(
+			"temp_chart.png",
+			chartX,
+			pdf.GetY()+2,
+			chartWidth,
+			chartHeight,
+			false,
+			gofpdf.ImageOptions{ImageType: "PNG"},
+			0,
+			"",
+		)
+		pdf.Ln(chartHeight + 5)
+	} else {
+		pdf.SetFont("Arial", "I", 12)
+		pdf.CellFormat(0, 10, "No data available for chart representation.", "", 1, "C", false, 0, "")
+		pdf.Ln(10)
+	}
+
+	// Generate PDF output
+	var buf bytes.Buffer
+	err := pdf.Output(&buf)
+	if err != nil {
+		return nil, fmt.Errorf("error generating PDF: %v", err)
+	}
+
+	return buf.Bytes(), nil
 }

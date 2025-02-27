@@ -59,6 +59,10 @@ func SendOTPEmail(email, otp string) error {
 	return nil
 }
 
+// func GenerateReferralCode() string {
+// 	return fmt.Sprintf("%s%d", utils.RandomString(5), time.Now().UnixNano()/1e6)
+// }
+
 func ParseJSON(body io.Reader, v interface{}) error {
 	return json.NewDecoder(body).Decode(v)
 }
