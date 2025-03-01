@@ -12,6 +12,7 @@ type UserUseCaseInterface interface {
 	UserSignup(user models.User) (models.TokenUsers, error)
 	VerifyOTP(email string, verify models.VerifyOTP) error
 	SaveTempUserAndGenerateOTP(user models.User) (models.TokenUsers, error)
+	GenerateAndSendOTP(email string) error
 	generateAndSaveOTP(email string) (string, time.Time, error)
 	VerifyOTPAndRegisterUser(email string, otp string) (models.TokenUsers, error)
 	ResendOTP(string) error
@@ -20,7 +21,7 @@ type UserUseCaseInterface interface {
 	ListCategory() ([]domain.Category, error)
 	UserProfile(userID string) (*models.User, error)
 	UpdateProfile(editProfile models.User) (*models.User, error)
-	ForgotPassword(userID int, input models.NewPassword) (models.User, error)
+	ResetPassword(otp, password, confirmPassword string) (models.User, error)
 	AddAddress(userID int, address models.AddAddress) (models.AddAddress, error)
 	UpdateAddress(userID int, address domain.Address) (domain.Address, error)
 	DeleteAddress(userID int) error

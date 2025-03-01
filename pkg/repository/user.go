@@ -37,8 +37,10 @@ func (r *UserRepository) SaveOTP(email, otp string, expiry time.Time) error {
 		OtpExpiry: expiry,
 	}
 
-	result := r.db.Create(&newOTP)
-	return result.Error
+	if err := r.db.Create(&newOTP).Error; err != nil {
+		return errors.New("failed to store OTP")
+	}
+	return nil
 }
 
 func (r *UserRepository) SaveOrUpdateOTP(email string, otp string, otpExpiry time.Time) error {
@@ -117,19 +119,22 @@ func (r *UserRepository) UpdateOTP(otp models.OTP) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	if result.RowsAffected == 0 {
-		return errors.New("no rows were updated, check your WHERE conditions")
-	}
+	// if result.RowsAffected == 0 {
+	// 	return errors.New("no rows were updated, check your WHERE conditions")
+	// }
 	return result.Error
 }
 
-func (r *UserRepository) GetOTPByEmail(email string) (string, error) {
-	var otp string
-	err := r.db.Model(&models.OTP{}).Where("email = ?", email).Select("otp").Scan(&otp).Error
+func (r *UserRepository) GetOTPByEmail(email string) (models.OTP, error) {
+	var otpRecord models.OTP
+	err := r.db.Where("email = ?", email).First(&otpRecord).Error
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch OTP: %w", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return models.OTP{}, errors.New("OTP not found")
+		}
+		return models.OTP{}, err
 	}
-	return otp, nil
+	return otpRecord, nil
 }
 
 func (r *UserRepository) GetTempUserByEmail(email string) (models.TempUser, error) {
@@ -213,6 +218,18 @@ func (r *UserRepository) ResendOTP(email string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *UserRepository) GetEmailByOTP(otp string) (string, error) {
+	var otpRecord models.OTP
+	err := r.db.Where("otp = ?", otp).First(&otpRecord).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errors.New("invalid or expired OTP")
+		}
+		return "", err
+	}
+	return otpRecord.Email, nil
 }
 func (r *UserRepository) UnblockUser(email string) error {
 	result := r.db.Model(&models.UserLogin{}).Where("email = ?", email).Update("blocked", false)

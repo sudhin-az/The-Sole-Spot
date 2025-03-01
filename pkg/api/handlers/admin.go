@@ -203,7 +203,7 @@ func (ad *AdminHandler) SalesReport(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	limit := c.Query("limit")
-	orderStatus := c.Query("order_status")
+	paymentStatus := c.Query("payment_status")
 
 	if startDate == "" && endDate == "" && limit == "" {
 		errRes := response.ClientResponse(http.StatusBadRequest, "Please provide start and end date or a valid limit (day, week, month, year).", nil, nil)
@@ -213,7 +213,7 @@ func (ad *AdminHandler) SalesReport(c *gin.Context) {
 
 	startDate, endDate = ad.adminUseCase.GetDateRange(startDate, endDate, limit)
 
-	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, orderStatus)
+	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, paymentStatus)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error processing orders", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)
@@ -239,7 +239,7 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	limit := c.Query("limit")
-	orderStatus := c.Query("order_status")
+	paymentStatus := c.Query("payment_status")
 
 	if startDate == "" && endDate == "" && limit == "" {
 		errRes := response.ClientResponse(http.StatusBadRequest, "Please provide start and end date or a valid limit (day, week, month, year).", nil, nil)
@@ -248,7 +248,7 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	}
 
 	startDate, endDate = ad.adminUseCase.GetDateRange(startDate, endDate, limit)
-	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, orderStatus)
+	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, paymentStatus)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error processing orders", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)
@@ -256,7 +256,7 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	}
 
 	// Call PDF Generation Function
-	pdfData, err := ad.adminUseCase.GenerateSalesReportPDF(result, amount, startDate, endDate, orderStatus)
+	pdfData, err := ad.adminUseCase.GenerateSalesReportPDF(result, amount, startDate, endDate, paymentStatus)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error generating PDF", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)

@@ -200,6 +200,24 @@ func (u *UserHandler) UpdateProfile(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "User profile details updated successfully", userProfile, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+func (h *UserHandler) SendOTP(c *gin.Context) {
+	var sendOTP models.SendOTP
+	if err := c.ShouldBindJSON(&sendOTP); err != nil {
+		c.JSON(http.StatusBadRequest, response.ClientResponse(http.StatusBadRequest, "Invalid input format", nil, err.Error()))
+		return
+	}
+
+	token, err := h.userUseCase.GenerateAndSendOTP(sendOTP.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ClientResponse(http.StatusInternalServerError, "Failed to send OTP", nil, err.Error()))
+		return
+	}
+	responseData := map[string]interface{}{
+		"token": token,
+	}
+	c.JSON(http.StatusOK, response.ClientResponse(http.StatusOK, "OTP sent successfully", responseData, nil))
+}
 func (h *UserHandler) ForgotPassword(c *gin.Context) {
 	var input models.ForgotPassword
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -207,18 +225,24 @@ func (h *UserHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	if err := helper.ValidatePassword(input); err != nil {
-		c.JSON(http.StatusBadRequest, response.ClientResponse(http.StatusBadRequest, "Validation failed", nil, err.Error()))
+	tokenString := c.GetHeader("Authorization")
+
+	email, err := helper.VerifyTemporaryToken(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.ClientResponse(http.StatusUnauthorized, "Invalid or expired token", nil, err.Error()))
 		return
 	}
 
-	email := c.Query("email")
-	user, err := h.userUseCase.ForgotPassword(email, input)
+	if input.Password != input.ConfirmPassword {
+		c.JSON(http.StatusBadRequest, response.ClientResponse(http.StatusBadRequest, "Passwords do not match", nil, nil))
+		return
+	}
+
+	user, err := h.userUseCase.ResetPassword(email, input.Otp, input.Password, input.ConfirmPassword)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ClientResponse(http.StatusInternalServerError, "Failed to reset password", nil, err.Error()))
 		return
 	}
-
 	c.JSON(http.StatusOK, response.ClientResponse(http.StatusOK, "Password reset successfully", user, nil))
 }
 func (h *UserHandler) ChangePassword(c *gin.Context) {

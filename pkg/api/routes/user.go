@@ -21,7 +21,6 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 	//addresses
 	address := router.Group("/addresses")
 	{
-		address.POST("/forgotpassword", userHandler.ForgotPassword)
 		address.Use(middleware.AuthMiddleware())
 		address.POST("/addaddress", userHandler.AddAddress)
 		address.PUT("/editaddress", userHandler.UpdateAddress)
@@ -32,6 +31,12 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 		address.GET("/userprofile", userHandler.UserProfile)
 		address.PUT("/editprofile", userHandler.UpdateProfile)
 		address.PUT("/changepassword", userHandler.ChangePassword)
+	}
+
+	Password := router.Group("/password")
+	{
+		Password.POST("/sendOTP", userHandler.SendOTP)
+		Password.POST("/forgotPassword", userHandler.ForgotPassword)
 	}
 
 	//products

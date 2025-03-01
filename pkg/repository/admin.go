@@ -249,7 +249,7 @@ func (ad *AdminRepository) ChangeOrderStatus(orderID string, status string) (mod
 	return changeOrderStatus, nil
 }
 
-func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) (models.OrderCount, models.AmountInformation, error) {
+func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, paymentStatus string) (models.OrderCount, models.AmountInformation, error) {
 	var orders []models.Order
 
 	startDate, err := time.Parse("2006-01-02", fromDate)
@@ -264,11 +264,11 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) 
 
 	endDate = endDate.Add(24*time.Hour - time.Nanosecond)
 
-	fmt.Println("Fetching orders between:", startDate, "and", endDate, "with status:", orderStatus)
+	fmt.Println("Fetching orders between:", startDate, "and", endDate, "with status:", paymentStatus)
 
 	query := ad.DB.Where("order_date BETWEEN ? AND ?", startDate, endDate)
-	if orderStatus != "" {
-		query = query.Where("order_status = ?", orderStatus)
+	if paymentStatus != "" {
+		query = query.Where("payment_status = ?", paymentStatus)
 	}
 
 	err = query.Find(&orders).Error
@@ -302,20 +302,21 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) 
 		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error counting order items: %v", err)
 	}
 
-	orderStatusCounts := make(map[string]int64)
+	paymentStatusCounts := make(map[string]int64)
 	var totalCount int64
 	for _, sc := range statusCounts {
-		orderStatusCounts[sc.OrderStatus] = sc.Count
+		paymentStatusCounts[sc.OrderStatus] = sc.Count
 		totalCount += sc.Count
 	}
+	fmt.Println("OrderStatusCounts:", paymentStatusCounts)
 
 	return models.OrderCount{
 		TotalOrder:     uint(totalCount),
-		TotalPending:   uint(orderStatusCounts[models.Pending]),
-		TotalConfirmed: uint(orderStatusCounts[models.Confirm]),
-		TotalShipped:   uint(orderStatusCounts[models.Shipped]),
-		TotalDelivered: uint(orderStatusCounts[models.Delivered]),
-		TotalCancelled: uint(orderStatusCounts[models.Cancelled]),
-		TotalReturned:  uint(orderStatusCounts[models.Return]),
+		TotalPending:   uint(paymentStatusCounts[models.Pending]),
+		TotalConfirmed: uint(paymentStatusCounts[models.Confirm]),
+		TotalShipped:   uint(paymentStatusCounts[models.Shipped]),
+		TotalDelivered: uint(paymentStatusCounts[models.Delivered]),
+		TotalCancelled: uint(paymentStatusCounts[models.Cancelled]),
+		TotalReturned:  uint(paymentStatusCounts[models.Return]),
 	}, accountInfo, nil
 }

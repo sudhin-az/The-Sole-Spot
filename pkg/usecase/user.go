@@ -116,31 +116,29 @@ func (uc *UserUseCase) VerifyOTP(email string, verify models.VerifyOTP) error {
 		return err
 	}
 	if otp != verify.OTP {
-		fmt.Println(otp)
 		return errors.New("invalid OTP")
 	}
 
 	if time.Now().After(otpExpiry) {
-		fmt.Println(otp)
 		return errors.New("expired OTP")
 	}
 
-	tempUser, err := uc.userRepo.GetTempUserByEmail(email)
-	if err != nil {
-		return err
-	}
+	// tempUser, err := uc.userRepo.GetTempUserByEmail(email)
+	// if err != nil {
+	// 	return err
+	// }
 
-	if uc.userRepo.IsEmailExists(tempUser.Email) || uc.userRepo.IsPhoneExists(tempUser.Phone) {
-		uc.userRepo.DeleteOTP(email)
-		return errors.New("user already exists")
-	}
+	// if uc.userRepo.IsEmailExists(tempUser.Email) || uc.userRepo.IsPhoneExists(tempUser.Phone) {
+	// 	uc.userRepo.DeleteOTP(email)
+	// 	return errors.New("user already exists")
+	// }
 
-	tempUser = models.TempUser{}
+	// tempUser = models.TempUser{}
 
-	err = uc.userRepo.DeleteOTP(email)
-	if err != nil {
-		return err
-	}
+	// err = uc.userRepo.DeleteOTP(email)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -204,6 +202,31 @@ func (uc *UserUseCase) generateAndSaveOTP(email string) (string, time.Time, erro
 	}
 
 	return otp, otpExpiry, nil
+}
+
+func (uc *UserUseCase) GenerateAndSendOTP(email string) (string, error) {
+	_, err := uc.userRepo.GetUserByEmail(email)
+	if err != nil {
+		return "", errors.New("user not found")
+	}
+	otp := utils.GenerateOTP()
+	otpExpiry := time.Now().Add(3 * time.Minute)
+
+	err = uc.userRepo.SaveOrUpdateOTP(email, otp, otpExpiry)
+	if err != nil {
+		return "", err
+	}
+	err = utils.SendOTPEmail(email, otp)
+	if err != nil {
+		return "", err
+	}
+
+	token, err := helper.GenerateTemporaryToken(email)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 func (uc *UserUseCase) VerifyOTPAndRegisterUser(email string, otp string) (models.TokenUsers, error) {
@@ -342,46 +365,36 @@ func (uc *UserUseCase) UpdateProfile(editProfile models.User) (*models.User, err
 	}
 	return userProfile, nil
 }
-func (uc *UserUseCase) ForgotPassword(email string, input models.ForgotPassword) (models.User, error) {
+
+func (uc *UserUseCase) ResetPassword(email, otp, password, confirmPassword string) (models.User, error) {
+
+	if password != confirmPassword {
+		return models.User{}, errors.New("password and confirm password do not match")
+	}
+	otpRecord, err := uc.userRepo.GetOTPByEmail(email)
+	if err != nil {
+		return models.User{}, err
+	}
+	if otpRecord.OTP != otp {
+		return models.User{}, errors.New("invalid OTP")
+	}
+	hashedPassword, err := helper.HashPassword(password)
+	if err != nil {
+		return models.User{}, err
+	}
 	user, err := uc.userRepo.GetUserByEmail(email)
 	if err != nil {
-		return models.User{}, errors.New("user not found")
+		return models.User{}, err
 	}
-
-	err = utils.SendOTPEmail(email, input.Otp)
+	user.Password = hashedPassword
+	err = uc.userRepo.CreateUser(user)
 	if err != nil {
 		return models.User{}, err
 	}
-
-	otp := utils.GenerateOTP()
-	otpExpiry := time.Now().Add(3 * time.Minute)
-
-	// storedOTP, otpExpiry, err := uc.userRepo.GetOTP(email)
-	// if err != nil {
-	// 	return models.User{}, errors.New("OTP not found")
-	// }
-
-	if time.Now().After(otpExpiry) {
-		return models.User{}, errors.New("OTP expired")
-	}
-
-	// if storedOTP != otp {
-	// 	return models.User{}, errors.New("invalid OTP")
-	// }
-
-	err = uc.userRepo.VerifyOTPAndMoveUser(email, otp)
+	err = uc.userRepo.DeleteOTP(email)
 	if err != nil {
 		return models.User{}, err
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return models.User{}, errors.New("failed to hash password")
-	}
-
-	if err := uc.userRepo.ForgotPassword(email, string(hashedPassword)); err != nil {
-		return models.User{}, errors.New("failed to update password")
-	}
-
 	return user, nil
 }
 

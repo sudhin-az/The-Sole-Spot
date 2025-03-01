@@ -21,6 +21,7 @@ type UserRepository interface {
 	UpdateOTP(otp models.OTP) error
 	CreateUser(user models.User) error
 	GetUserByEmail(email string) (models.User, error)
+	GetEmailByOTP(otp string) (string, error)
 	UnblockUser(email string) error
 	GetProducts() ([]models.ProductResponse, error)
 	ListCategory() ([]domain.Category, error)

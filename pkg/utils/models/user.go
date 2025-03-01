@@ -7,15 +7,13 @@ import (
 )
 
 type User struct {
-	ID           int    `gorm:"primarykey"`
-	FirstName    string `json:"first_name" validate:"required"`
-	LastName     string `json:"last_name" validate:"required"`
-	Email        string `json:"email" validate:"required,email"`
-	Phone        string `json:"phone" validate:"required,e164"`
-	Password     string `json:"password" validate:"required,min=8"`
-	ReferralCode string `json:"referral_code" gorm:"unique"`
-	ReferredBy   string `json:"referred_by"`
-	Blocked      bool
+	ID        int    `gorm:"primarykey"`
+	FirstName string `json:"first_name" validate:"required"`
+	LastName  string `json:"last_name" validate:"required"`
+	Email     string `json:"email" validate:"required,email"`
+	Phone     string `json:"phone" validate:"required,e164"`
+	Password  string `json:"password" validate:"required,min=8"`
+	Blocked   bool
 }
 
 type UserLogin struct {
@@ -84,10 +82,14 @@ type ForgotPasswordRequest struct {
 	Email string `json:"email" binding:"required,email"`
 }
 
+type SendOTP struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
 type ForgotPassword struct {
-	Email    string `json:"email" binding:"required,email"`
-	Otp      string `json:"otp" binding:"required"`
-	Password string `json:"password" binding:"required,min=6"`
+	Otp             string `json:"otp" binding:"required"`
+	Password        string `json:"password" validate:"required,min=5"`
+	ConfirmPassword string `json:"confirm_password" validate:"required,min=5,eqfield=Password"`
 }
 
 type NewPassword struct {
