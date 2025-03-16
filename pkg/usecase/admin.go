@@ -9,10 +9,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/wcharczuk/go-chart"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -272,33 +274,33 @@ func (ad *AdminUseCase) GetDateRange(startDate, endDate, limit string) (string, 
 	return startDate, endDate
 }
 
-func (ad *AdminUseCase) TotalOrders(fromDate, toDate, paymentStatus string) (models.OrderCount, models.AmountInformation, error) {
-	orders, amount, err := ad.adminrepository.GetTotalOrders(fromDate, toDate, paymentStatus)
+func (ad *AdminUseCase) TotalOrders(fromDate, toDate, orderStatus string) (models.OrderCount, models.AmountInformation, error) {
+	orders, amount, err := ad.adminrepository.GetTotalOrders(fromDate, toDate, orderStatus)
 	if err != nil {
 		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("failed to get total orders: %w", err)
 	}
 	return orders, amount, nil
 }
 
-func (ad *AdminUseCase) GenerateSalesReportPDF(orderCount models.OrderCount, amountInfo models.AmountInformation, startDate, endDate, paymentStatus string) ([]byte, error) {
+func (ad *AdminUseCase) GenerateSalesReportPDF(orderCount models.OrderCount, amountInfo models.AmountInformation, startDate, endDate, orderStatus string) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 
-	// Title
+	// Report Header
 	pdf.SetFont("Arial", "B", 20)
 	pdf.CellFormat(0, 10, "Sales Report", "", 1, "C", false, 0, "")
 	pdf.Ln(10)
 
-	// Report Details
+	// Report Duration
 	pdf.SetFont("Arial", "B", 12)
 	pdf.CellFormat(40, 10, "Report Duration:", "", 1, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 12)
-	pdf.CellFormat(0, 10, "Start Date: "+startDate, "", 1, "L", false, 0, "")
-	pdf.CellFormat(0, 10, "End Date: "+endDate, "", 1, "L", false, 0, "")
-	pdf.CellFormat(0, 10, "Payment Status: "+paymentStatus, "", 1, "L", false, 0, "")
+	pdf.CellFormat(40, 10, "Start Date: "+startDate, "", 1, "L", false, 0, "")
+	pdf.CellFormat(40, 10, "End Date: "+endDate, "", 1, "L", false, 0, "")
+	pdf.CellFormat(40, 10, "Payment Status: "+orderStatus, "", 1, "L", false, 0, "")
 	pdf.Ln(12)
 
-	// Summary Information Table
+	// Summary Information
 	pdf.SetFont("Arial", "B", 14)
 	pdf.Cell(0, 10, "Summary Information")
 	pdf.Ln(8)
@@ -351,6 +353,146 @@ func (ad *AdminUseCase) GenerateSalesReportPDF(orderCount models.OrderCount, amo
 	}
 	pdf.Ln(10)
 
+	// Bar Chart
+	chartData := []chart.Value{
+		{Value: float64(orderCount.TotalPending), Label: "Pending"},
+		{Value: float64(orderCount.TotalConfirmed), Label: "Confirmed"},
+		{Value: float64(orderCount.TotalShipped), Label: "Shipped"},
+		{Value: float64(orderCount.TotalDelivered), Label: "Delivered"},
+		{Value: float64(orderCount.TotalCancelled), Label: "Cancelled"},
+		{Value: float64(orderCount.TotalReturned), Label: "Returned"},
+	}
+
+	if hasValidData(chartData) {
+		barChart := chart.BarChart{
+			Width:  500,
+			Height: 300,
+			Bars:   chartData,
+			XAxis: chart.Style{
+				Show: true,
+			},
+			YAxis: chart.YAxis{
+				Style: chart.Style{
+					Show: true,
+				},
+				Range: &chart.ContinuousRange{
+					Min: 0,
+					Max: float64(orderCount.TotalOrder),
+				},
+			},
+		}
+
+		var chartBuffer bytes.Buffer
+		err := barChart.Render(chart.PNG, &chartBuffer)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate bar chart: %v", err)
+		}
+
+		chartFileName := "temp_chart.png"
+		err = os.WriteFile(chartFileName, chartBuffer.Bytes(), 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save chart image: %v", err)
+		}
+		defer os.Remove(chartFileName)
+
+		pageWidth, pageHeight := pdf.GetPageSize()
+		chartWidth := float64(150)
+		chartHeight := chartWidth / 1.5
+		remainingHeight := pageHeight - pdf.GetY() - 10
+		if chartHeight > remainingHeight {
+			pdf.AddPage()
+			pdf.Ln(5)
+		}
+
+		pdf.SetFont("Arial", "B", 14)
+		pdf.CellFormat(0, 10, "Order Status Distribution", "", 1, "C", false, 0, "")
+		pdf.Ln(5)
+
+		chartX := (pageWidth - chartWidth) / 2
+		chartY := pdf.GetY() + 2
+
+		pdf.ImageOptions(
+			chartFileName,
+			chartX,
+			chartY,
+			chartWidth,
+			chartHeight,
+			false,
+			gofpdf.ImageOptions{ImageType: "PNG"},
+			0,
+			"",
+		)
+		pdf.SetY(chartY + chartHeight + 2)
+
+	} else {
+		pdf.SetFont("Arial", "I", 12)
+		pdf.CellFormat(0, 10, "No data available for chart representation.", "", 1, "C", false, 0, "")
+		pdf.Ln(10)
+	}
+
+	// Pie Chart
+	pieChartData := []chart.Value{
+		{Value: amountInfo.TotalAmountBeforeDeduction, Label: "Total Amount Before Deduction"},
+		{Value: amountInfo.TotalCouponDeduction, Label: "Total Coupon Deduction"},
+		{Value: amountInfo.TotalProuctOfferDeduction, Label: "Total Product Offer Deduction"},
+		{Value: amountInfo.TotalAmountAfterDeduction, Label: "Total Amount After Deduction"},
+	}
+
+	if hasValidData(pieChartData) {
+		pieChart := chart.PieChart{
+			Width:  400,
+			Height: 400,
+			Values: pieChartData,
+		}
+
+		var pieChartBuffer bytes.Buffer
+		err := pieChart.Render(chart.PNG, &pieChartBuffer)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate pie chart: %v", err)
+		}
+
+		pieChartFileName := "temp_pie_chart.png"
+		err = os.WriteFile(pieChartFileName, pieChartBuffer.Bytes(), 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save pie chart image: %v", err)
+		}
+		defer os.Remove(pieChartFileName)
+
+		pageWidth, pageHeight := pdf.GetPageSize()
+		pieChartWidth := float64(150)
+		pieChartHeight := float64(150)
+		remainingHeight := pageHeight - pdf.GetY() - 10
+		if pieChartHeight > remainingHeight {
+			pdf.AddPage()
+			pdf.Ln(5)
+		}
+
+		pdf.SetFont("Arial", "B", 14)
+		pdf.CellFormat(0, 10, "Summary Information Distribution", "", 1, "C", false, 0, "")
+		pdf.Ln(5)
+
+		pieChartX := (pageWidth - pieChartWidth) / 2
+		pieChartY := pdf.GetY() + 2
+
+		pdf.ImageOptions(
+			pieChartFileName,
+			pieChartX,
+			pieChartY,
+			pieChartWidth,
+			pieChartHeight,
+			false,
+			gofpdf.ImageOptions{ImageType: "PNG"},
+			0,
+			"",
+		)
+		pdf.SetY(pieChartY + pieChartHeight + 2)
+
+	} else {
+		pdf.SetFont("Arial", "I", 12)
+		pdf.CellFormat(0, 10, "No data available for pie chart representation.", "", 1, "C", false, 0, "")
+		pdf.Ln(10)
+	}
+
 	// Generate PDF output
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)
@@ -359,4 +501,29 @@ func (ad *AdminUseCase) GenerateSalesReportPDF(orderCount models.OrderCount, amo
 	}
 
 	return buf.Bytes(), nil
+}
+
+func hasValidData(data []chart.Value) bool {
+	for _, d := range data {
+		if d.Value > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (ad *AdminUseCase) BestSellingProduct() ([]models.BestSellingProduct, error){
+	bestSellingProduct, err := ad.adminrepository.BestSellingProduct()
+	if err != nil {
+		return []models.BestSellingProduct{}, err
+	}
+	return bestSellingProduct, nil
+}
+
+func (ad *AdminUseCase) BestSellingCategory() ([]models.BestSellingCategory, error) {
+	bestSellingCategory, err := ad.adminrepository.BestSellingCategory()
+	if err != nil {
+		return []models.BestSellingCategory{}, err
+	}
+	return bestSellingCategory, nil
 }

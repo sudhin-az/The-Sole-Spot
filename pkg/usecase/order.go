@@ -3,12 +3,15 @@ package usecase
 import (
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/repository"
+	"ecommerce_clean_architecture/pkg/utils"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/jung-kurt/gofpdf"
 )
 
 type OrderUseCase struct {
@@ -58,19 +61,38 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 	}
 
 	var grandTotal float64
+	var rawTotal float64
+	var categoryDiscount float64
 	for _, item := range cartItems {
 		grandTotal += item.TotalPrice
+		rawTotal += item.Price * float64(item.Quantity)
+		categoryDiscount += item.CategoryDiscount * float64(item.Quantity)
 	}
+	fmt.Println("catdis", categoryDiscount)
 	order.GrandTotal = grandTotal
-	order.FinalPrice = order.GrandTotal
+	if categoryDiscount > grandTotal {
+		order.FinalPrice = utils.RoundToTwoDecimalPlaces(grandTotal)
+	} else {
+		order.FinalPrice = utils.RoundToTwoDecimalPlaces(order.GrandTotal - categoryDiscount)
+	}
+	order.RawTotal = rawTotal
+	order.CategoryDiscount = categoryDiscount
 	order.OrderDate = time.Now()
+
+	deliveryCharge := 0.0
+	if order.FinalPrice < 1000 {
+		deliveryCharge = 50.0
+	}
+	order.DeliveryCharge = deliveryCharge
+	order.FinalPrice += deliveryCharge
 
 	if order.CouponCode != "" {
 		couponData, err := o.CouponRepo.CheckCouponExpired(tx, order.CouponCode)
 		if err != nil {
 			return models.Order{}, fmt.Errorf("failed to fetch coupon details: %w", err)
 		}
-		if order.FinalPrice < float64(couponData.MinimumRequired) || order.FinalPrice >= float64(couponData.MaximumAllowed) {
+		fmt.Println("final_Price", order.FinalPrice)
+		if order.FinalPrice < float64(couponData.MinimumRequired) {
 			return models.Order{}, fmt.Errorf("order price does not meet coupon requirements (Total Price: %f, Coupon: %s, Maximum Allowed: %d)", order.FinalPrice, order.CouponCode, couponData.MaximumAllowed)
 		}
 		if couponData.EndDate.Before(time.Now()) {
@@ -86,26 +108,26 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 		if discount > float64(couponData.MaximumAllowed) {
 			discount = float64(couponData.MaximumAllowed)
 		}
-		order.FinalPrice = order.FinalPrice - discount
+		order.FinalPrice = utils.RoundToTwoDecimalPlaces(order.FinalPrice - discount)
 		if order.FinalPrice < 0 {
 			order.FinalPrice = 0
 		}
+		order.DiscountAmount = utils.RoundToTwoDecimalPlaces(discount)
 	}
 
 	//COD
 	switch order.PaymentMethod {
 	case "COD":
+
 		if order.FinalPrice > 1000 {
 			return models.Order{}, errors.New("cash on delivery is not allowed for orders above 1000")
 		}
 		order.PaymentMethodID = 1
-		order.Method = "Cash"
 		order.OrderStatus = "pending"
 		order.PaymentStatus = "not paid"
 		//Online
 	case "ONLINE":
 		order.PaymentMethodID = 2
-		order.Method = "Razorpay"
 		order.OrderStatus = "pending"
 		order.PaymentStatus = "not paid"
 
@@ -133,8 +155,8 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 			return models.Order{}, fmt.Errorf("failed to record wallet transaction: %w", err)
 		}
 		order.PaymentMethodID = 3
-		order.Method = "Wallet"
-		order.PaymentStatus = "success"
+		order.PaymentStatus = "paid"
+		order.OrderStatus = "success"
 	default:
 		return models.Order{}, errors.New("unsupported payment method")
 	}
@@ -166,7 +188,7 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 			OrderID:    orderID,
 			ProductID:  item.ProductID,
 			Quantity:   item.Quantity,
-			TotalPrice: (float64(item.Price) * float64(item.Quantity)) - (float64(item.Price)*float64(item.Quantity))*(order.Discount/100),
+			TotalPrice: (float64(item.OfferPrice) * float64(item.Quantity)) - (float64(item.OfferPrice)*float64(item.Quantity))*(order.Discount/100),
 		})
 	}
 
@@ -175,6 +197,12 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 		return models.Order{}, fmt.Errorf("failed to create order items: %w", err)
 	}
 
+	for _, item := range cartItems {
+		err := o.cartRepository.RemoveFromCart(item.UserID, item.ProductID)
+		if err != nil {
+			return models.Order{}, err
+		}
+	}
 	err = o.orderRepository.CommitTransaction(tx)
 	if err != nil {
 		return models.Order{}, fmt.Errorf("failed to commit transaction: %w", err)
@@ -503,4 +531,109 @@ func (o *OrderUseCase) ReturnUserOrder(orderID string, userID int) error {
 	}
 	return nil
 
+}
+
+func (o *OrderUseCase) GenerateInvoice(orderID string, userID int) (*gofpdf.Fpdf, error) {
+	orderDetails, err := o.orderRepository.FetchOrderDetailsFromDB(orderID)
+	if err != nil {
+		return nil, errors.New("Unable to fetch order Details")
+	}
+
+	if orderDetails.OrderStatus != models.Confirm {
+		return nil, errors.New("order status is not success")
+	}
+
+	invoiceNumber := fmt.Sprintf("INV-%s", orderID)
+	date := time.Now().Format("02 Jan 2006")
+	dueDate := time.Now().AddDate(0, 0, 15).Format("02 Jan 2006")
+
+	// Seller Info
+	sellerInfo := fmt.Sprintf("Axis Bank\nAccount Name: Sole-Spot\nAccount No.: 123-456-7890\nPay by: %v", orderDetails.OrderDate)
+
+	// Buyer Info
+	buyerInfo := fmt.Sprintf("%s\nphone: %v\n%s %s\n%s, %s %s",
+		orderDetails.CustomerName,
+		orderDetails.CustomerPhoneNumber,
+		orderDetails.CustomerAddress.HouseName,
+		orderDetails.CustomerAddress.State,
+		orderDetails.CustomerAddress.Street,
+		orderDetails.CustomerAddress.City,
+		orderDetails.CustomerAddress.Pin,
+	)
+	fmt.Println("CustomerName:", buyerInfo)
+	// Initialize PDF
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+
+	// Title
+	pdf.SetFont("Arial", "B", 20)
+	pdf.CellFormat(0, 15, "Tax Invoice", "", 1, "C", false, 0, "")
+	pdf.Ln(10)
+
+	// Invoice and Date
+	pdf.SetFont("Arial", "", 12)
+	pdf.SetXY(130, 20)
+	pdf.CellFormat(0, 6, fmt.Sprintf("Invoice No: %s", invoiceNumber), "", 1, "R", false, 0, "")
+	pdf.SetXY(130, 26)
+	pdf.CellFormat(0, 6, fmt.Sprintf("Date: %s", date), "", 1, "R", false, 0, "")
+	pdf.SetXY(130, 32)
+	pdf.CellFormat(0, 6, fmt.Sprintf("Due Date: %s", dueDate), "", 1, "R", false, 0, "")
+
+	// Billing and Shipping
+	pdf.Ln(15)
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(0, 10, "Billed To:", "", 1, "", false, 0, "")
+	pdf.SetFont("Arial", "", 12)
+	pdf.MultiCell(0, 10, sellerInfo, "", "L", false)
+	pdf.Ln(5)
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(0, 10, "Shipped To:", "", 1, "", false, 0, "")
+	pdf.SetFont("Arial", "", 12)
+	pdf.MultiCell(0, 10, buyerInfo, "", "L", false)
+
+	// Items Table
+	pdf.Ln(10)
+	pdf.SetFont("Arial", "B", 12)
+	pdf.SetFillColor(230, 230, 230)
+	pdf.CellFormat(80, 10, "Item", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 10, "Quantity", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(40, 10, "Price", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(40, 10, "Total", "1", 1, "C", true, 0, "")
+
+	pdf.SetFont("Arial", "", 12)
+	var subtotal float64
+
+	for _, item := range orderDetails.Items {
+		total := float64(item.Quantity) * item.Price
+		subtotal += total
+		pdf.CellFormat(80, 10, item.Name, "1", 0, "", false, 0, "")
+		pdf.CellFormat(30, 10, fmt.Sprintf("%d", item.Quantity), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", item.Price), "1", 0, "R", false, 0, "")
+		pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", total), "1", 1, "R", false, 0, "")
+	}
+
+	// Additional Charges and Final Total
+	totalOfferAmount := orderDetails.RawAmount - orderDetails.GrandTotal
+	totalDiscountAmount := orderDetails.Discount
+	categoryDiscount := orderDetails.CategoryDiscount
+	totalDeliveryCharge := orderDetails.DeliveryCharge
+	finalGrandTotal := orderDetails.FinalPrice
+
+	// Totals Section
+	pdf.Ln(5)
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(150, 10, "Subtotal", "1", 0, "R", false, 0, "")
+	pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", subtotal), "1", 1, "R", false, 0, "")
+	pdf.CellFormat(150, 10, "Total Offer Amount", "1", 0, "R", false, 0, "")
+	pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", totalOfferAmount), "1", 1, "R", false, 0, "")
+	pdf.CellFormat(150, 10, "Total Discount Amount", "1", 0, "R", false, 0, "")
+	pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", totalDiscountAmount), "1", 1, "R", false, 0, "")
+	pdf.CellFormat(150, 10, "Total Category Discount Amount", "1", 0, "R", false, 0, "")
+	pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", categoryDiscount), "1", 1, "R", false, 0, "")
+	pdf.CellFormat(150, 10, "Total Delivery Charge", "1", 0, "R", false, 0, "")
+	pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", totalDeliveryCharge), "1", 1, "R", false, 0, "")
+	pdf.CellFormat(150, 10, "Grand Total", "1", 0, "R", false, 0, "")
+	pdf.CellFormat(40, 10, fmt.Sprintf("%.2f", finalGrandTotal), "1", 1, "R", false, 0, "")
+
+	return pdf, nil
 }

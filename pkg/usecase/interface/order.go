@@ -3,6 +3,8 @@ package interfaces
 import (
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/utils/models"
+
+	"github.com/jung-kurt/gofpdf"
 )
 
 type OrderUseCase interface {
@@ -11,4 +13,5 @@ type OrderUseCase interface {
 	CancelOrders(orderID string, userID int) error
 	CancelOrderItem(orderItemID string, userID int) (domain.OrderItem, error)
 	ReturnUserOrder(orderID string, userID int) error
+	GenerateInvoice(orderID string, userID int) (*gofpdf.Fpdf, error)
 }

@@ -64,6 +64,7 @@ func UserRoutes(router *gin.RouterGroup, userHandler *handlers.UserHandler, cart
 		order.PUT("/cancelorders", orderHandler.CancelOrders)
 		order.PUT("/cancelOrderItem", orderHandler.CancelOrderItem)
 		order.PUT("/returnorder", orderHandler.ReturnUserOrder)
+		order.GET("/generate", orderHandler.GenerateInvoice)
 	}
 
 	router.GET("/payment", paymentHandler.CreatePayment)

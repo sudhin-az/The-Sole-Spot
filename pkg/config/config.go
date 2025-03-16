@@ -24,7 +24,7 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	var config Config
 
-	viper.AddConfigPath("C:/Users/hp/Documents/GO/Ecommerce_clean_architecture/cmd1")
+	viper.AddConfigPath("C:/Users/hp/Desktop/Ecommerce_clean_architecture/cmd1")
 	viper.SetConfigName("config")
 	viper.SetConfigType("env")
 	viper.AutomaticEnv()

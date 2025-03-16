@@ -52,6 +52,7 @@ func (o *OrderRepository) AddressExist(AddressID int) (bool, error) {
 	}
 	return count > 0, nil
 }
+
 func (o *OrderRepository) GetProductStock(tx *gorm.DB, productID int) (int, error) {
 	var stock int
 	err := tx.Raw("select stock from products where id = ?", productID).Scan(&stock).Error
@@ -122,7 +123,7 @@ func (o *OrderRepository) GetProductDetailsFromOrders(tx *gorm.DB, orderID int) 
 		return nil, err
 	}
 	var FinalPrice []float64
-	err = tx.Raw("select total_price from order_items where order_id = ?", orderID).Scan(&FinalPrice).Error
+	err = tx.Raw("select final_price from orders where order_id = ?", orderID).Scan(&FinalPrice).Error
 	if err != nil {
 		return []models.OrderProducts{}, err
 	}
@@ -182,6 +183,73 @@ func (o *OrderRepository) GetPriceoftheproduct(tx *gorm.DB, orderID string) (flo
 		return 0.0, err
 	}
 	return a, nil
+}
+func (o *OrderRepository) FetchOrderDetailsFromDB(orderID string) (models.OrdersDetails, error) {
+	var order models.Order
+	if err := o.DB.Where("order_id = ?", orderID).First(&order).Error; err != nil {
+		return models.OrdersDetails{}, err
+	}
+
+	var user models.User
+	if err := o.DB.Where("id = ?", order.UserID).First(&user).Error; err != nil {
+		return models.OrdersDetails{}, err
+	}
+
+	var address models.Address
+	if err := o.DB.Where("id = ?", order.AddressID).First(&address).Error; err != nil {
+		return models.OrdersDetails{}, err
+	}
+
+	var orderItems []domain.OrderItem
+	if err := o.DB.Where("order_id = ?", orderID).Find(&orderItems).Error; err != nil {
+		return models.OrdersDetails{}, err
+	}
+	var products []domain.Products
+	var RawTotal float64
+	for _, item := range orderItems {
+		var product domain.Products
+		if err := o.DB.Model(&product).Where("id = ?", item.ProductID).First(&product).Error; err != nil {
+			return models.OrdersDetails{}, nil
+		}
+		products = append(products, product)
+
+		for _, product := range products {
+			if item.Product.ID == product.ID {
+				RawTotal += product.Price * float64(item.Quantity)
+			}
+		}
+	}
+	fmt.Println("rawTotal", RawTotal)
+	var items []models.InvoiceItem
+	for _, orderItem := range orderItems {
+		var product domain.Products
+		if err := o.DB.Model(&product).Where("id = ?", orderItem.ProductID).First(&product).Error; err != nil {
+			return models.OrdersDetails{}, err
+		}
+		items = append(items, models.InvoiceItem{
+			Name:     product.Name,
+			Quantity: uint(orderItem.Quantity),
+			Price:    product.Price,
+		})
+	}
+
+	orderDetails := models.OrdersDetails{
+		CustomerName:        user.FirstName,
+		CustomerPhoneNumber: user.Phone,
+		CustomerAddress:     address,
+		CustomerCity:        address.City,
+		OrderDate:           order.OrderDate,
+		Items:               items,
+		OrderStatus:         order.OrderStatus,
+		GrandTotal:          order.GrandTotal,
+		CategoryDiscount:    order.CategoryDiscount,
+		RawAmount:           order.RawTotal,
+		FinalPrice:          order.FinalPrice,
+		Discount:            order.DiscountAmount,
+		DeliveryCharge:      order.DeliveryCharge,
+	}
+	fmt.Println("orderDetails", orderDetails)
+	return orderDetails, nil
 }
 func (o *OrderRepository) GetOrderDetails(userID int) ([]models.FullOrderDetails, error) {
 	var orderDetails []models.OrderDetails

@@ -249,7 +249,7 @@ func (ad *AdminRepository) ChangeOrderStatus(orderID string, status string) (mod
 	return changeOrderStatus, nil
 }
 
-func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, paymentStatus string) (models.OrderCount, models.AmountInformation, error) {
+func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) (models.OrderCount, models.AmountInformation, error) {
 	var orders []models.Order
 
 	startDate, err := time.Parse("2006-01-02", fromDate)
@@ -264,11 +264,11 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, paymentStatus string
 
 	endDate = endDate.Add(24*time.Hour - time.Nanosecond)
 
-	fmt.Println("Fetching orders between:", startDate, "and", endDate, "with status:", paymentStatus)
+	fmt.Println("Fetching orders between:", startDate, "and", endDate, "with status:", orderStatus)
 
 	query := ad.DB.Where("order_date BETWEEN ? AND ?", startDate, endDate)
-	if paymentStatus != "" {
-		query = query.Where("payment_status = ?", paymentStatus)
+	if orderStatus != "" {
+		query = query.Where("order_status = ?", orderStatus)
 	}
 
 	err = query.Find(&orders).Error
@@ -301,22 +301,68 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, paymentStatus string
 		GROUP BY order_status`, startDate, endDate).Scan(&statusCounts).Error; err != nil {
 		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error counting order items: %v", err)
 	}
+	fmt.Println("Number of orders fetched:", len(orders))
 
-	paymentStatusCounts := make(map[string]int64)
+	orderStatusCounts := make(map[string]int64)
 	var totalCount int64
 	for _, sc := range statusCounts {
-		paymentStatusCounts[sc.OrderStatus] = sc.Count
+		orderStatusCounts[sc.OrderStatus] = sc.Count
 		totalCount += sc.Count
 	}
-	fmt.Println("OrderStatusCounts:", paymentStatusCounts)
+	fmt.Println("OrderStatusCounts:", orderStatusCounts)
+	fmt.Println("PendingOrders:", orderStatusCounts[models.Pending])
+	fmt.Println("SuccessOrders:", orderStatusCounts[models.Confirm])
+	fmt.Println("ShippedOrders:", orderStatusCounts[models.Shipped])
+	fmt.Println("DeliveredOrders:", orderStatusCounts[models.Delivered])
+	fmt.Println("CancelledOrders:", orderStatusCounts[models.Cancelled])
+	fmt.Println("ReturnOrders:", orderStatusCounts[models.Return])
 
 	return models.OrderCount{
 		TotalOrder:     uint(totalCount),
-		TotalPending:   uint(paymentStatusCounts[models.Pending]),
-		TotalConfirmed: uint(paymentStatusCounts[models.Confirm]),
-		TotalShipped:   uint(paymentStatusCounts[models.Shipped]),
-		TotalDelivered: uint(paymentStatusCounts[models.Delivered]),
-		TotalCancelled: uint(paymentStatusCounts[models.Cancelled]),
-		TotalReturned:  uint(paymentStatusCounts[models.Return]),
+		TotalPending:   uint(orderStatusCounts[models.Pending]),
+		TotalConfirmed: uint(orderStatusCounts[models.Confirm]),
+		TotalShipped:   uint(orderStatusCounts[models.Shipped]),
+		TotalDelivered: uint(orderStatusCounts[models.Delivered]),
+		TotalCancelled: uint(orderStatusCounts[models.Cancelled]),
+		TotalReturned:  uint(orderStatusCounts[models.Return]),
 	}, accountInfo, nil
+}
+
+func (ad *AdminRepository) BestSellingProduct() ([]models.BestSellingProduct, error) {
+	var bestSellingProduct []models.BestSellingProduct
+	err := ad.DB.Raw(`
+	SELECT p.id AS product_id, p.name AS product_name,
+	SUM(o.quantity) AS total_sold
+	FROM order_items o
+	JOIN 
+	products p ON o.product_id = p.id
+	GROUP BY 
+	p.id, p.name 
+	ORDER BY 
+	total_sold DESC
+	LIMIT 10;
+	`).Scan(&bestSellingProduct).Error
+	if err != nil {
+		return []models.BestSellingProduct{}, err
+	}
+	return bestSellingProduct, nil
+}
+
+func (ad *AdminRepository) BestSellingCategory() ([]models.BestSellingCategory, error) {
+	var bestSellingCategory []models.BestSellingCategory
+	err := ad.DB.Raw(`
+	SELECT c.id AS category_id, c.category AS category_name,
+	SUM(o.quantity) AS total_sold FROM order_items o 
+	JOIN products p ON o.product_id = p.id
+	JOIN 
+	categories c ON p.category_id = c.id
+	GROUP BY c.id, c.category
+	ORDER BY 
+	total_sold DESC 
+	LIMIT 10;
+	`).Scan(&bestSellingCategory).Error
+	if err != nil {
+		return []models.BestSellingCategory{}, err
+	}
+	return bestSellingCategory, nil
 }

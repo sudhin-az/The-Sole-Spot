@@ -3,6 +3,7 @@ package usecase
 import (
 	"ecommerce_clean_architecture/pkg/repository"
 	"ecommerce_clean_architecture/pkg/repository/interfaces"
+	"ecommerce_clean_architecture/pkg/utils"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
 )
@@ -111,7 +112,8 @@ func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (model
 		ProductID:  productID,
 		Quantity:   quantity,
 		Price:      int(product.Price),
-		OfferPrice: int(discountedPrice),
+		OfferPrice: int(product.OfferPrice),
+		CategoryDiscount: utils.RoundToTwoDecimalPlaces(product.OfferPrice - discountedPrice)*float64(quantity),
 		TotalPrice: totalPrice,
 	}
 

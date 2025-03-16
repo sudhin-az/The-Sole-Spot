@@ -166,3 +166,40 @@ func (o *OrderHandler) ReturnUserOrder(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "order returned successfully", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+func (o *OrderHandler) GenerateInvoice(c *gin.Context) {
+	userID, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "User ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+	userid := userID.(int)
+
+	orderID := c.Query("order_id")
+
+	if orderID == "" {
+		errRes := response.ClientResponse(http.StatusBadRequest, "order ID is required", nil, nil)
+		c.JSON(http.StatusBadRequest, errRes)
+		return
+	}
+
+	pdf, err := o.orderUseCase.GenerateInvoice(orderID, userid)
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusBadRequest, "could not generate invoice", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename=invoice.pdf")
+	c.Header("Content-Type", "application/pdf")
+
+	err = pdf.Output(c.Writer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	successRes := response.ClientResponse(http.StatusOK, "the invoice is generated", pdf, nil)
+	c.JSON(http.StatusOK, successRes)
+}

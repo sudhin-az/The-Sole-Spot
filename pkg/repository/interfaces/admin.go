@@ -28,4 +28,7 @@ type AdminRepository interface {
 	ChangeOrderStatus(orderID string, Status string) (models.Order, error)
 
 	GetTotalOrders(fromDate, toDate, PaymentStatus string) (models.OrderCount, models.AmountInformation, error)
+
+	BestSellingProduct() ([]models.BestSellingProduct, error)
+	BestSellingCategory() ([]models.BestSellingCategory, error)
 }

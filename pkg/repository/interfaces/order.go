@@ -33,6 +33,8 @@ type OrderRepository interface {
 	GetOrderItemPrice(tx *gorm.DB, orderItemID int) (float64, error)
 	GetOrderItemDetails(tx *gorm.DB, orderItemID int) (int, int, error)
 
+	FetchOrderDetailsFromDB(orderID string) (models.CombinedOrderDetails, error)
+
 	GetCouponDetails(couponCode string) (models.Coupon, error)
 	CheckCouponUsage(userID uint, couponCode string) (int, error)
 	RecordCouponUsage(tx *gorm.DB, userID int, couponCode string) error

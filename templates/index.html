@@ -103,7 +103,7 @@
               alert("Payment Successful!");
               window.location.href = "/payment/success";
             } else {
-              alert("Payment verification failed: " + response.error);
+              alert(response.message);
             }
           },
           error: function (xhr, status, error) {

@@ -3,26 +3,27 @@ package models
 import "time"
 
 type Order struct {
-	OrderId         int        `gorm:"primaryKey;autoIncrement" json:"order_id"`
-	UserID          int        `json:"user_id" gorm:"not null"`
-	AddressID       uint       `json:"address_id"`
-	Address         Address    `json:"-" gorm:"foreignkey:AddressID"`
-	CouponID        *uint      `json:"coupon_id,omitempty"`
-	CouponCode      string     `json:"coupon_code"`
-	Discount        float64    `json:"discount"`
-	GrandTotal      float64    `json:"grand_total"`
-	Method          string     `json:"method"`
-	PaymentStatus   string     `json:"payment_status"`
-	PaymentMethodID uint       `json:"paymentmethod_id"`
-	OrderDate       time.Time  `json:"order_date"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
-	DeletedAt       *time.Time `json:"deleted_at" gorm:"index"`
-	DeliveryTime    *time.Time `json:"delivery_time"`
-	OrderStatus     string     `json:"order_status"`
-	Approval        bool       `json:"approval"`
-	FinalPrice      float64    `json:"final_price"`
-	PaymentMethod   string     `json:"-" gorm:"foreignkey:PaymentMethodID"`
+	OrderId          int        `gorm:"primaryKey;autoIncrement" json:"order_id"`
+	UserID           int        `json:"user_id" gorm:"not null"`
+	AddressID        uint       `json:"address_id"`
+	Address          Address    `json:"-" gorm:"foreignkey:AddressID"`
+	CouponID         *uint      `json:"coupon_id,omitempty"`
+	CouponCode       string     `json:"coupon_code"`
+	RawTotal         float64    `json:"raw_total"`
+	Discount         float64    `json:"discount"`
+	DiscountAmount   float64    `json:"discount_amount"`
+	CategoryDiscount float64    `json:"category_discount"`
+	GrandTotal       float64    `json:"grand_total"`
+	DeliveryCharge   float64    `json:"delivery_charge"`
+	PaymentStatus    string     `json:"payment_status"`
+	PaymentMethodID  uint       `json:"paymentmethod_id"`
+	OrderDate        time.Time  `json:"order_date"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+	DeletedAt        *time.Time `json:"deleted_at" gorm:"index"`
+	OrderStatus      string     `json:"order_status"`
+	FinalPrice       float64    `json:"final_price"`
+	PaymentMethod    string     `json:"-" gorm:"foreignkey:PaymentMethodID"`
 }
 type OrderFromCart struct {
 	PaymentID uint    `json:"payment_id" binding:"required"`
@@ -50,6 +51,22 @@ type OrderDetails struct {
 	OrderStatus   string
 	PaymentMethod string
 	PaymentStatus string
+}
+
+type OrdersDetails struct {
+	CustomerName        string
+	CustomerPhoneNumber string
+	CustomerAddress     Address
+	CustomerCity        string
+	OrderDate           time.Time
+	Items               []InvoiceItem
+	OrderStatus         string
+	CategoryDiscount    float64
+	GrandTotal          float64
+	RawAmount           float64
+	FinalPrice          float64
+	Discount            float64
+	DeliveryCharge      float64
 }
 
 type OrderProductDetails struct {
@@ -94,4 +111,10 @@ type AmountInformation struct {
 	TotalCouponDeduction       float64 `json:"total_coupon_deduction"`
 	TotalProuctOfferDeduction  float64 `json:"total_product_offer_deduction"`
 	TotalAmountAfterDeduction  float64 `json:"total_amount_after_deduction"`
+}
+
+type InvoiceItem struct {
+	Name     string  `json:"name"`
+	Quantity uint    `json:"quantity"`
+	Price    float64 `json:"price"`
 }

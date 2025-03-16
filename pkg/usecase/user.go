@@ -263,12 +263,12 @@ func (uc *UserUseCase) VerifyOTPAndRegisterUser(email string, otp string) (model
 		return models.TokenUsers{}, err
 	}
 
-	token, err := helper.GenerateTokenUsers(tempUser.ID, tempUser.Email, time.Now())
-	if err != nil {
-		return models.TokenUsers{}, err
-	}
+	// token, err := helper.GenerateTokenUsers(tempUser.ID, tempUser.Email, time.Now())
+	// if err != nil {
+	// 	return models.TokenUsers{}, err
+	// }
 
-	return models.TokenUsers{AccessToken: token, RefreshToken: token, Users: models.UserDetailsResponse{
+	return models.TokenUsers{Users: models.UserDetailsResponse{
 		Id:        int(tempUser.ID),
 		FirstName: tempUser.FirstName,
 		LastName:  tempUser.LastName,

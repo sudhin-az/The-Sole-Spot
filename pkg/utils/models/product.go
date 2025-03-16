@@ -38,3 +38,15 @@ type ProductDetails struct {
 	Total      float64 `json:"total"`
 	Quantity   int     `json:"quantity"`
 }
+
+type BestSellingProduct struct {
+	ProductID   uint   `json:"product_id"`
+	ProductName string `json:"product_name"`
+	TotalSold   int    `json:"total_sold"`
+}
+
+type BestSellingCategory struct {
+	CategoryID   uint   `json:"category_id"`
+	CategoryName string `json:"category_name"`
+	TotalSold    int    `json:"total_sold"`
+}

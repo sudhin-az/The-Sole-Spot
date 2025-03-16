@@ -17,4 +17,7 @@ type AdminUseCase interface {
 
 	GetDateRange(startDate, endDate, limit string) (string, string)
 	TotalOrders(fromDate, toDate, PaymentStatus string) (models.OrderCount, models.AmountInformation, error)
+
+	BestSellingProduct() ([]models.BestSellingProduct, error)
+	BestSellingCategory() ([]models.BestSellingCategory, error)
 }

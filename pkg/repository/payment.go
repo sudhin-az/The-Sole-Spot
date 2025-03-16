@@ -24,7 +24,7 @@ func (pay *PaymentRepository) AddRazorPayDetails(orderID string, razorPayOrderID
 }
 func (pay *PaymentRepository) GetOrderDetailsByOrderId(orderID string) (models.CombinedOrderDetails, error) {
 	var orderDetails models.CombinedOrderDetails
-	err := pay.DB.Raw("select  orders.order_id,orders.final_price,orders.order_status,orders.payment_status,users.name,users.email,users.phone,addresses.house_name,addresses.street,addresses.city,addresses.district,addresses.state,addresses.pin from orders inner join users on  orders.user_id = users.id inner join addresses on orders.address_id=addresses.id where orders.order_id=? ", orderID).Scan(&orderDetails).Error
+	err := pay.DB.Raw("select  orders.order_id,orders.final_price,orders.order_status,orders.payment_status,users.first_name,users.email,users.phone,addresses.house_name,addresses.street,addresses.city,addresses.district,addresses.state,addresses.pin from orders inner join users on  orders.user_id = users.id inner join addresses on orders.address_id=addresses.id where orders.order_id=? ", orderID).Scan(&orderDetails).Error
 
 	if err != nil {
 		return models.CombinedOrderDetails{}, err
@@ -42,7 +42,7 @@ func (pay *PaymentRepository) CheckPaymentStatus(orderID int) (string, error) {
 
 func (pay *PaymentRepository) UpdateOnlinePaymentSucess(orderID int) (*[]models.CombinedOrderDetails, error) {
 	var orders []models.CombinedOrderDetails
-	err := pay.DB.Raw("UPDATE orders set payment_status = 'paid' where order_id = ?", orderID).Scan(&orders).Error
+	err := pay.DB.Raw("UPDATE orders set payment_status = 'paid',order_status = 'success' where order_id = ?", orderID).Scan(&orders).Error
 	if err != nil {
 		return nil, err
 	}

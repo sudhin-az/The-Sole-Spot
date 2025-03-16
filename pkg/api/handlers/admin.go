@@ -203,7 +203,7 @@ func (ad *AdminHandler) SalesReport(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	limit := c.Query("limit")
-	paymentStatus := c.Query("payment_status")
+	orderStatus := c.Query("order_status")
 
 	if startDate == "" && endDate == "" && limit == "" {
 		errRes := response.ClientResponse(http.StatusBadRequest, "Please provide start and end date or a valid limit (day, week, month, year).", nil, nil)
@@ -213,7 +213,7 @@ func (ad *AdminHandler) SalesReport(c *gin.Context) {
 
 	startDate, endDate = ad.adminUseCase.GetDateRange(startDate, endDate, limit)
 
-	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, paymentStatus)
+	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, orderStatus)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error processing orders", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)
@@ -239,7 +239,7 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	limit := c.Query("limit")
-	paymentStatus := c.Query("payment_status")
+	orderStatus := c.Query("order_status")
 
 	if startDate == "" && endDate == "" && limit == "" {
 		errRes := response.ClientResponse(http.StatusBadRequest, "Please provide start and end date or a valid limit (day, week, month, year).", nil, nil)
@@ -248,7 +248,7 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	}
 
 	startDate, endDate = ad.adminUseCase.GetDateRange(startDate, endDate, limit)
-	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, paymentStatus)
+	result, amount, err := ad.adminUseCase.TotalOrders(startDate, endDate, orderStatus)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error processing orders", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)
@@ -256,7 +256,7 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	}
 
 	// Call PDF Generation Function
-	pdfData, err := ad.adminUseCase.GenerateSalesReportPDF(result, amount, startDate, endDate, paymentStatus)
+	pdfData, err := ad.adminUseCase.GenerateSalesReportPDF(result, amount, startDate, endDate, orderStatus)
 	if err != nil {
 		errorRes := response.ClientResponse(http.StatusInternalServerError, "Error generating PDF", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errorRes)
@@ -267,4 +267,38 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename=sales_report.pdf")
 	c.Header("Content-Type", "application/pdf")
 	c.Data(http.StatusOK, "application/pdf", pdfData)
+}
+
+func (ad *AdminHandler) BestSellingProduct(c *gin.Context) {
+	_, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "Admin ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+	bestSellingProduct, err := ad.adminUseCase.BestSellingProduct()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not getting best selling products", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "Best Selling Products Retrieved Successfully", bestSellingProduct, nil)
+	c.JSON(http.StatusOK, successRes)
+}
+
+func (ad *AdminHandler) BestSellingCategory(c *gin.Context) {
+	_, ok := c.Get("id")
+	if !ok {
+		errRes := response.ClientResponse(http.StatusUnauthorized, "Admin ID not found in context", nil, nil)
+		c.JSON(http.StatusUnauthorized, errRes)
+		return
+	}
+	bestSellingCategory, err := ad.adminUseCase.BestSellingCategory()
+	if err != nil {
+		errorRes := response.ClientResponse(http.StatusInternalServerError, "could not getting best selling categories", nil, err.Error())
+		c.JSON(http.StatusInternalServerError, errorRes)
+		return
+	}
+	successRes := response.ClientResponse(http.StatusOK, "Best Selling categories Retrieved Successfully", bestSellingCategory, nil)
+	c.JSON(http.StatusOK, successRes)
 }

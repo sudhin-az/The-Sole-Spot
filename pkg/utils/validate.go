@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"math"
 	"regexp"
 )
 
@@ -43,4 +44,8 @@ func ValidateEmail(email string) error {
 		return errors.New("invalid email format")
 	}
 	return nil
+}
+
+func RoundToTwoDecimalPlaces(num float64) float64 {
+	return math.Round(num*100) / 100
 }

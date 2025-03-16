@@ -82,11 +82,19 @@ func (car *CartRepository) RemoveProductFromCart(userID int, productID int, pric
 
 	if cartItem.Quantity > 1 {
 		cartItem.Quantity--
-		cartItem.TotalPrice -= price
+		cartItem.TotalPrice -= float64(cartItem.OfferPrice)
 		return car.DB.Save(&cartItem).Error
 	}
 
 	return car.DB.Delete(&cartItem).Error
+}
+func (car *CartRepository) RemoveFromCart(userID int, productID int) error {
+	var cart models.Cart
+	err := car.DB.Where("user_id = ? AND product_id = ?", userID, productID).First(&cart).Error
+	if err != nil {
+		return errors.New("product not found in the cart")
+	}
+	return car.DB.Delete(&cart).Error
 }
 
 func (car *CartRepository) GetAllItemsFromCart(userID int) ([]models.Cart, error) {
