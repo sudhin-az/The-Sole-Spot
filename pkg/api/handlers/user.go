@@ -28,24 +28,24 @@ func (h *UserHandler) UserSignup(c *gin.Context) {
 	var user models.User
 
 	if err := c.ShouldBindJSON(&user); err != nil {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Invalid request data", nil, err.Error())
+		errRes := response.UserResponse("Invalid request data")
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
 	if err := usecase.ValidateUser(user); err != nil {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Validation failed", nil, err.Error())
+		errRes := response.UserResponse("Validation failed")
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
 
-	tokenUsers, err := h.userUseCase.SaveTempUserAndGenerateOTP(user)
+	_, err := h.userUseCase.SaveTempUserAndGenerateOTP(user)
 	if err != nil {
-		errRes := response.ClientResponse(http.StatusInternalServerError, "Signup failed", nil, err.Error())
+		errRes := response.UserResponse("Signup failed")
 		c.JSON(http.StatusInternalServerError, errRes)
 		return
 	}
 
-	successRes := response.ClientResponse(http.StatusOK, "OTP sent successfully", tokenUsers, nil)
+	successRes := response.UserResponse("OTP sent successfully")
 	c.JSON(http.StatusOK, successRes)
 }
 
@@ -56,26 +56,26 @@ func (h *UserHandler) VerifyOTP(c *gin.Context) {
 
 	fmt.Println("hellooooooooo", email)
 	if email == "" {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Email is required", nil, "missing email parameter")
+		errRes := response.UserResponse("Email is required")
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
 
 	var verifyUser models.VerifyOTP
 	if err := c.ShouldBindJSON(&verifyUser); err != nil {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Invalid request data", nil, err.Error())
+		errRes := response.UserResponse("Invalid request data")
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
 
-	tokenUsers, err := h.userUseCase.VerifyOTPAndRegisterUser(email, verifyUser.OTP)
+	_, err := h.userUseCase.VerifyOTPAndRegisterUser(email, verifyUser.OTP)
 	if err != nil {
-		errRes := response.ClientResponse(http.StatusUnauthorized, "OTP verification failed", nil, err.Error())
+		errRes := response.UserResponse("OTP verification failed")
 		c.JSON(http.StatusUnauthorized, errRes)
 		return
 	}
 
-	successRes := response.ClientResponse(http.StatusOK, "OTP verified and user registered successfully", tokenUsers, nil)
+	successRes := response.UserResponse("OTP verified and user registered successfully")
 	c.JSON(http.StatusOK, successRes)
 
 }

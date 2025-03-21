@@ -15,5 +15,14 @@ func ClientResponse(statusCode int, message string, data interface{}, err interf
 		Data:       data,
 		Error:      err,
 	}
+}
 
+type UserRes struct {
+	Message string `json:"message"`
+}
+
+func UserResponse(message string) UserRes {
+	return UserRes{
+		Message: message,
+	}
 }

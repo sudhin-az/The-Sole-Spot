@@ -285,8 +285,8 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) 
 	var accountInfo models.AmountInformation
 	for _, order := range orders {
 		accountInfo.TotalAmountBeforeDeduction += order.GrandTotal
-		accountInfo.TotalCouponDeduction += order.Discount
-		accountInfo.TotalProuctOfferDeduction += order.GrandTotal - order.FinalPrice - order.Discount
+		accountInfo.TotalCouponDeduction += order.DiscountAmount
+		accountInfo.TotalProuctOfferDeduction += order.GrandTotal - order.FinalPrice - order.DiscountAmount
 		accountInfo.TotalAmountAfterDeduction += order.FinalPrice
 	}
 

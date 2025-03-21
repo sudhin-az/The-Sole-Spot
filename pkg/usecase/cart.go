@@ -3,9 +3,9 @@ package usecase
 import (
 	"ecommerce_clean_architecture/pkg/repository"
 	"ecommerce_clean_architecture/pkg/repository/interfaces"
-	"ecommerce_clean_architecture/pkg/utils"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
+	"math"
 )
 
 type CartUseCase struct {
@@ -66,6 +66,9 @@ func (cu *CartUseCase) DisplayCart(userID int) ([]models.Cart, error) {
 	return cart, nil
 }
 func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (models.CartResponse, error) {
+	if quantity <= 0 {
+		return models.CartResponse{}, errors.New("invalid quantity")
+	}
 
 	product, err := cu.productRepository.GetProductByID(productID)
 	if err != nil {
@@ -73,7 +76,7 @@ func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (model
 	}
 
 	if product.Quantity < 0 {
-		return models.CartResponse{}, errors.New("invalid quantity")
+		return models.CartResponse{}, errors.New("invalid product quantity")
 	}
 
 	if quantity > product.Quantity {
@@ -90,13 +93,13 @@ func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (model
 	}
 
 	discount := category.CategoryDiscount
-	discountedPrice := float64(product.OfferPrice) * (1 - (float64(discount) / 100))
-	totalPrice := float64(quantity) * discountedPrice
+	discountedPrice := math.Round(float64(product.OfferPrice)*(1-(float64(discount)/100))*100) / 100
+	totalPrice := math.Round(float64(quantity)*discountedPrice*100) / 100
 
 	existingCartItem, _ := cu.cartRepository.GetCartItem(userID, productID)
 	if existingCartItem != nil {
 		existingCartItem.Quantity += quantity
-		existingCartItem.TotalPrice = float64(existingCartItem.Quantity) * discountedPrice
+		existingCartItem.TotalPrice = math.Round(float64(existingCartItem.Quantity)*discountedPrice*100) / 100
 		updatedCart, err := cu.cartRepository.UpdateCart(*existingCartItem)
 		if err != nil {
 			return models.CartResponse{}, err
@@ -108,13 +111,13 @@ func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (model
 	}
 
 	newCartItem := models.Cart{
-		UserID:     userID,
-		ProductID:  productID,
-		Quantity:   quantity,
-		Price:      int(product.Price),
-		OfferPrice: int(product.OfferPrice),
-		CategoryDiscount: utils.RoundToTwoDecimalPlaces(product.OfferPrice - discountedPrice)*float64(quantity),
-		TotalPrice: totalPrice,
+		UserID:           userID,
+		ProductID:        productID,
+		Quantity:         quantity,
+		Price:            int(product.Price),
+		OfferPrice:       int(product.OfferPrice),
+		CategoryDiscount: math.Round((float64(product.OfferPrice)-discountedPrice)*float64(quantity)*100) / 100,
+		TotalPrice:       totalPrice,
 	}
 
 	addedCart, err := cu.cartRepository.AddToCart(newCartItem)

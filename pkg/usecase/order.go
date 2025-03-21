@@ -63,19 +63,20 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 	var grandTotal float64
 	var rawTotal float64
 	var categoryDiscount float64
+
 	for _, item := range cartItems {
 		grandTotal += item.TotalPrice
 		rawTotal += item.Price * float64(item.Quantity)
-		categoryDiscount += item.CategoryDiscount * float64(item.Quantity)
+		categoryDiscount += float64(item.CategoryDiscount)
 	}
-	fmt.Println("catdis", categoryDiscount)
+
 	order.GrandTotal = grandTotal
-	if categoryDiscount > grandTotal {
-		order.FinalPrice = utils.RoundToTwoDecimalPlaces(grandTotal)
-	} else {
-		order.FinalPrice = utils.RoundToTwoDecimalPlaces(order.GrandTotal - categoryDiscount)
-	}
 	order.RawTotal = rawTotal
+
+	order.FinalPrice = utils.RoundToTwoDecimalPlaces(grandTotal - categoryDiscount)
+	if order.FinalPrice < 0 {
+		order.FinalPrice = 0
+	}
 	order.CategoryDiscount = categoryDiscount
 	order.OrderDate = time.Now()
 
@@ -91,72 +92,84 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 		if err != nil {
 			return models.Order{}, fmt.Errorf("failed to fetch coupon details: %w", err)
 		}
-		fmt.Println("final_Price", order.FinalPrice)
+
 		if order.FinalPrice < float64(couponData.MinimumRequired) {
-			return models.Order{}, fmt.Errorf("order price does not meet coupon requirements (Total Price: %f, Coupon: %s, Maximum Allowed: %d)", order.FinalPrice, order.CouponCode, couponData.MaximumAllowed)
+			return models.Order{}, fmt.Errorf("order price does not meet coupon requirements (Total Price: %f, Coupon: %s, Minimum Required: %d)", order.FinalPrice, order.CouponCode, couponData.MinimumRequired)
 		}
+
 		if couponData.EndDate.Before(time.Now()) {
 			return models.Order{}, errors.New("Coupon has expired")
 		}
+
 		if exist := o.orderRepository.CheckCouponAppliedOrNot(tx, order.UserID, order.CouponCode); exist >= couponData.MaximumUsage {
 			return models.Order{}, fmt.Errorf("coupon %s already applied %d times", order.CouponCode, exist)
 		}
+
 		order.CouponID = &couponData.ID
 		order.Discount = float64(couponData.Discount)
 
-		discount := (order.FinalPrice * float64(couponData.Discount)) / 100
+		discount := (order.GrandTotal * float64(couponData.Discount)) / 100
 		if discount > float64(couponData.MaximumAllowed) {
 			discount = float64(couponData.MaximumAllowed)
 		}
+
 		order.FinalPrice = utils.RoundToTwoDecimalPlaces(order.FinalPrice - discount)
 		if order.FinalPrice < 0 {
 			order.FinalPrice = 0
 		}
+
 		order.DiscountAmount = utils.RoundToTwoDecimalPlaces(discount)
 	}
 
-	//COD
 	switch order.PaymentMethod {
 	case "COD":
-
 		if order.FinalPrice > 1000 {
 			return models.Order{}, errors.New("cash on delivery is not allowed for orders above 1000")
 		}
 		order.PaymentMethodID = 1
 		order.OrderStatus = "pending"
 		order.PaymentStatus = "not paid"
-		//Online
+
 	case "ONLINE":
 		order.PaymentMethodID = 2
 		order.OrderStatus = "pending"
 		order.PaymentStatus = "not paid"
 
-		//Wallet
 	case "WALLET":
 		userWallet, err := o.orderRepository.GetWalletAmount(tx, order.UserID)
 		if err != nil {
 			return models.Order{}, err
 		}
+
 		if userWallet < order.FinalPrice {
 			return models.Order{}, errors.New("wallet amount is less than total amount")
 		}
+
+		if userWallet < 0 {
+			return models.Order{}, errors.New("wallet amount is invalid")
+		}
+
 		neweBalance := userWallet - order.FinalPrice
 		err = o.orderRepository.UpdateWalletAmount(tx, neweBalance, order.UserID)
 		if err != nil {
 			return models.Order{}, fmt.Errorf("failed to update wallet: %w", err)
 		}
+
 		walletTxn := models.WalletTransaction{
 			UserID:      order.UserID,
 			Debit:       uint(order.FinalPrice),
 			EventDate:   time.Now(),
 			TotalAmount: uint(neweBalance),
 		}
+
 		if err := o.walletRepository.WalletTransaction(tx, walletTxn); err != nil {
 			return models.Order{}, fmt.Errorf("failed to record wallet transaction: %w", err)
 		}
+
 		order.PaymentMethodID = 3
 		order.PaymentStatus = "paid"
 		order.OrderStatus = "success"
+
 	default:
 		return models.Order{}, errors.New("unsupported payment method")
 	}
@@ -166,6 +179,7 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 		if err != nil {
 			return models.Order{}, fmt.Errorf("failed to fetch stock for product ID %d: %w", item.ProductID, err)
 		}
+
 		if item.Quantity > availableStock {
 			return models.Order{}, fmt.Errorf("insufficient stock for product ID %d", item.ProductID)
 		}
@@ -203,6 +217,7 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 			return models.Order{}, err
 		}
 	}
+
 	err = o.orderRepository.CommitTransaction(tx)
 	if err != nil {
 		return models.Order{}, fmt.Errorf("failed to commit transaction: %w", err)
@@ -212,6 +227,7 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 	if err != nil {
 		return models.Order{}, fmt.Errorf("failed to fetch brief order details: %w", err)
 	}
+
 	return orderSuccessResponse, nil
 }
 
@@ -538,6 +554,9 @@ func (o *OrderUseCase) GenerateInvoice(orderID string, userID int) (*gofpdf.Fpdf
 	if err != nil {
 		return nil, errors.New("Unable to fetch order Details")
 	}
+
+	fmt.Println("Order ID:", orderID)
+	fmt.Println("Fetched Order Status:", orderDetails.OrderStatus)
 
 	if orderDetails.OrderStatus != models.Confirm {
 		return nil, errors.New("order status is not success")

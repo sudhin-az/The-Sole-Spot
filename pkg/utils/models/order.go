@@ -21,7 +21,7 @@ type Order struct {
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
 	DeletedAt        *time.Time `json:"deleted_at" gorm:"index"`
-	OrderStatus      string     `json:"order_status"`
+	OrderStatus      string     `gorm:"column:order_status"`
 	FinalPrice       float64    `json:"final_price"`
 	PaymentMethod    string     `json:"-" gorm:"foreignkey:PaymentMethodID"`
 }
