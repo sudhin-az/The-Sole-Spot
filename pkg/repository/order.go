@@ -253,7 +253,7 @@ func (o *OrderRepository) FetchOrderDetailsFromDB(orderID string) (models.Orders
 }
 func (o *OrderRepository) GetOrderDetails(userID int) ([]models.FullOrderDetails, error) {
 	var orderDetails []models.OrderDetails
-	o.DB.Raw("SELECT order_id, final_price, order_status, payment_status FROM orders WHERE user_id = ?", userID).Scan(&orderDetails)
+	o.DB.Raw("SELECT order_id, final_price, discount_amount, order_status, payment_status FROM orders WHERE user_id = ?", userID).Scan(&orderDetails)
 	fmt.Println(orderDetails)
 
 	var fullOrderDetails []models.FullOrderDetails

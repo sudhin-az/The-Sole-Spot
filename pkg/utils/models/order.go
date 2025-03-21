@@ -46,11 +46,12 @@ type OrderProducts struct {
 }
 
 type OrderDetails struct {
-	OrderId       int
-	FinalPrice    float64
-	OrderStatus   string
-	PaymentMethod string
-	PaymentStatus string
+	OrderId        int
+	FinalPrice     float64
+	DiscountAmount float64
+	OrderStatus    string
+	PaymentMethod  string
+	PaymentStatus  string
 }
 
 type OrdersDetails struct {
