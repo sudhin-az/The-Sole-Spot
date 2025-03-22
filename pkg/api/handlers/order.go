@@ -19,6 +19,20 @@ func NewOrderHandler(useCase usecase.OrderUseCase) *OrderHandler {
 	}
 }
 
+// OrderItemsFromCart godoc
+// @Summary Order items from cart
+// @Description Places an order for items in the user's cart using the provided coupon code
+// @Tags Orders
+// @Accept json
+// @Produce json
+// @Param coupon_code query string true "Coupon Code"
+// @Param orderRequest body struct { AddressID int `json:"address_id" binding:"required"`; PaymentMethod string `json:"payment_method" binding:"required"` } true "Order request details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /orders/cart [post]
+
 func (o *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 	couponCode := c.Query("coupon_code")
 	if couponCode == "" {
@@ -65,6 +79,15 @@ func (o *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// ViewOrders godoc
+// @Summary View user orders
+// @Description Retrieves all orders for the authenticated user
+// @Tags Orders
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Router /orders [get]
+
 func (o *OrderHandler) ViewOrders(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -89,6 +112,17 @@ func (o *OrderHandler) ViewOrders(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Full Order Details", fullOrderDetails, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// CancelOrders godoc
+// @Summary Cancel an order
+// @Description Cancels an order by its ID
+// @Tags Orders
+// @Param order_id query string true "Order ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Router /orders/cancel [put]
 
 func (o *OrderHandler) CancelOrders(c *gin.Context) {
 	orderID := c.Query("order_id")
@@ -117,6 +151,17 @@ func (o *OrderHandler) CancelOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// CancelOrderItem godoc
+// @Summary Cancel an order item
+// @Description Cancels a specific order item by its ID
+// @Tags Orders
+// @Param order_item_id query string true "Order Item ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Router /orders/item/cancel [put]
+
 func (o *OrderHandler) CancelOrderItem(c *gin.Context) {
 	orderItemID := c.Query("order_item_id")
 	if orderItemID == "" {
@@ -142,6 +187,16 @@ func (o *OrderHandler) CancelOrderItem(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// ReturnUser Order godoc
+// @Summary Return a user order
+// @Description Initiates the return process for a specific order by its ID
+// @Tags Orders
+// @Param order_id query string true "Order ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Router /orders/return [put]
 func (o *OrderHandler) ReturnUserOrder(c *gin.Context) {
 	orderID := c.Query("order_id")
 	if orderID == "" {
@@ -166,6 +221,18 @@ func (o *OrderHandler) ReturnUserOrder(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "order returned successfully", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// GenerateInvoice godoc
+// @Summary Generate an invoice
+// @Description Generates a PDF invoice for a specific order by its ID
+// @Tags Orders
+// @Param order_id query string true "Order ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /orders/invoice [get]
 
 func (o *OrderHandler) GenerateInvoice(c *gin.Context) {
 	userID, ok := c.Get("id")

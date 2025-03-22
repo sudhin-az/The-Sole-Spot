@@ -3,7 +3,7 @@ package repository
 import (
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
-	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -29,12 +29,12 @@ func (car *CartRepository) DisplayCart(userID int) ([]models.Cart, error) {
 
 func (r *CartRepository) GetCartItem(userID int, productID int) (*models.Cart, error) {
 	var cartItem models.Cart
-	fmt.Println("Running query with userID=", userID, "productID=", productID)
+	log.Println("Running query with userID=", userID, "productID=", productID)
 	if err := r.DB.Where("user_id = ? AND product_id = ?", userID, productID).First(&cartItem).Error; err != nil {
-		fmt.Println("Query error -", err)
+		log.Println("Query error -", err)
 		return nil, err
 	}
-	fmt.Println("Query successful, cartItem=", cartItem)
+	log.Println("Query successful, cartItem=", cartItem)
 	return &cartItem, nil
 }
 func (car *CartRepository) AddToCart(cartItem models.Cart) (models.Cart, error) {

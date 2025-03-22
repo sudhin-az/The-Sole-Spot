@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/smtp"
 	"net/textproto"
 	"os"
@@ -36,7 +37,7 @@ func SendOTPEmail(email, otp string) error {
 	subject := "Your OTP Code"
 	body := fmt.Sprintf("Your OTP code is %s", otp)
 
-	fmt.Println("UserOTP", otp)
+	log.Println("UserOTP", otp)
 
 	header := textproto.MIMEHeader{}
 	header.Set("From", from)

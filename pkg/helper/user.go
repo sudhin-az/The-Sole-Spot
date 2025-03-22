@@ -3,6 +3,7 @@ package helper
 import (
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -36,7 +37,7 @@ func GenerateTokenUsers(userID uint, userEmail string, expirationTime time.Time)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte("132457689"))
-	fmt.Println("errrrrrrrrr", tokenString)
+	log.Println("errrrrrrrrr", tokenString)
 	if err != nil {
 		return "", err
 	}

@@ -6,6 +6,7 @@ import (
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/razorpay/razorpay-go"
 )
@@ -76,7 +77,7 @@ func (pay *PaymentUsecase) OnlinePaymentVerification(details models.OnlinePaymen
 		return nil, errors.New("payment is unsuccessful")
 	}
 	orders, err := pay.PaymentRepo.UpdateOnlinePaymentSucess(details.OrderID)
-	fmt.Println("OrderID is recieved: ", details.OrderID)
+	log.Println("OrderID is recieved: ", details.OrderID)
 	if err != nil {
 		return nil, err
 	}

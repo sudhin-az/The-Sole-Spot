@@ -16,6 +16,16 @@ func NewWalletHandler(usecase usecase.WalletUseCase) *WalletHandler {
 	return &WalletHandler{usecase: usecase}
 }
 
+// ViewWallet godoc
+// @Summary View user wallet
+// @Description Retrieves the wallet details for the authenticated user
+// @Tags Wallet
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /wallet [get]
+
 func (wal *WalletHandler) ViewWallet(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -33,6 +43,16 @@ func (wal *WalletHandler) ViewWallet(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Walllet is successfully shown", wallet, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// GetWalletTransaction godoc
+// @Summary Get wallet transaction history
+// @Description Retrieves the transaction history for the authenticated user's wallet
+// @Tags Wallet
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /wallet/transactions [get]
 
 func (wal *WalletHandler) GetWalletTransaction(c *gin.Context) {
 	userID, ok := c.Get("id")

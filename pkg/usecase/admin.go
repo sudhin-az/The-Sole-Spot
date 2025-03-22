@@ -113,7 +113,7 @@ func (ad *AdminUseCase) UnBlockUsers(userID int) error {
 func (ad *AdminUseCase) GetAllOrderDetails() ([]models.FullOrderDetails, error) {
 	fullOrderDetails, err := ad.adminrepository.GetAllOrderDetails()
 	if err != nil {
-		fmt.Println("Error in repository:", err)
+		log.Println("Error in repository:", err)
 		return nil, err
 	}
 	return fullOrderDetails, nil
@@ -512,7 +512,7 @@ func hasValidData(data []chart.Value) bool {
 	return false
 }
 
-func (ad *AdminUseCase) BestSellingProduct() ([]models.BestSellingProduct, error){
+func (ad *AdminUseCase) BestSellingProduct() ([]models.BestSellingProduct, error) {
 	bestSellingProduct, err := ad.adminrepository.BestSellingProduct()
 	if err != nil {
 		return []models.BestSellingProduct{}, err

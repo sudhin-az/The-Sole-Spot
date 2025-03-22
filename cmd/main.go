@@ -7,7 +7,6 @@ import (
 	"ecommerce_clean_architecture/pkg/db"
 	"ecommerce_clean_architecture/pkg/repository"
 	"ecommerce_clean_architecture/pkg/usecase"
-	"fmt"
 	"log"
 	"os"
 
@@ -16,29 +15,35 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+// @title The-Sole-Spot API
+// @description This is the API documentation for The-Sole-Spot application.
+// @version 1.0
+// @host localhost:8080
+// @BasePath /
+
 func main() {
 	// Load environment variables from .env file
 	err := gotenv.Load("config.env")
 	if err != nil {
-		fmt.Println("Vivek!", err)
+		log.Println("Vivek!", err)
 		log.Fatalf("Error loading .env file")
 	}
 
 	// Load configuration
 	config, configErr := config.LoadConfig()
 	if configErr != nil {
-		fmt.Println("Amaan!", configErr)
+		log.Println("Amaan!", configErr)
 		log.Fatal("Cannot load config:", configErr)
 	}
-	fmt.Println("Loaded config:", config)
+	log.Println("Loaded config:", config)
 
 	// Initialize database connection
 	database, dbErr := db.ConnectDatabase(config)
 	if dbErr != nil {
-		fmt.Println("Niketh!", err)
+		log.Println("Niketh!", err)
 		log.Fatal("Cannot load database:", dbErr)
 	}
-	fmt.Println("Database connected:", database)
+	log.Println("Database connected:", database)
 
 	// Initialize repositories, use cases, and handlers
 	userRepo := repository.NewUserRepository(database)

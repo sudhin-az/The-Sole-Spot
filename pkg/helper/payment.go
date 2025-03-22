@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/razorpay/razorpay-go/utils"
 )
@@ -14,6 +14,6 @@ func VerifyPayment(RazorPayOrderID string, paymentID, signature, razopaySecret s
 	}
 
 	result := utils.VerifyPaymentSignature(params, signature, razopaySecret)
-	fmt.Println("*****", result)
+	log.Println("*****", result)
 	return result
 }

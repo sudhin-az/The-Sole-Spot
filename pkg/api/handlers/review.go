@@ -19,6 +19,18 @@ func NewReviewHandler(useCase usecase.ReviewUseCase) *ReviewHandler {
 	}
 }
 
+// AddReview godoc
+// @Summary Add a review for a product
+// @Description Adds a review for a specific product by a user
+// @Tags Reviews
+// @Param product_id query string true "Product ID"
+// @Param review body models.ReviewRequest true "Review details"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Router /reviews [post]
+
 func (r *ReviewHandler) AddReview(c *gin.Context) {
 	ProductID := c.Query("product_id")
 	if ProductID == "" {
@@ -50,6 +62,16 @@ func (r *ReviewHandler) AddReview(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// GetReviewsByProductID godoc
+// @Summary Get reviews for a product
+// @Description Retrieves all reviews for a specific product by its ID
+// @Tags Reviews
+// @Param product_id query string true "Product ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /reviews [get]
+
 func (r *ReviewHandler) GetReviewsByProductID(c *gin.Context) {
 	ProductID := c.Query("product_id")
 	if ProductID == "" {
@@ -66,6 +88,17 @@ func (r *ReviewHandler) GetReviewsByProductID(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Reviews Retrieved Successfully", review, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// DeleteReview godoc
+// @Summary Delete a review
+// @Description Deletes a specific review by its ID
+// @Tags Reviews
+// @Param id query string true "Review ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /reviews [delete]
+
 func (r *ReviewHandler) DeleteReview(c *gin.Context) {
 	ReviewID := c.Query("id")
 	if ReviewID == "" {
@@ -83,6 +116,17 @@ func (r *ReviewHandler) DeleteReview(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Review Deleted Successfully", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// GetAverageRating godoc
+// @Summary Get average rating for a product
+// @Description Retrieves the average rating for a specific product by its ID
+// @Tags Reviews
+// @Param product_id query string true "Product ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /reviews/average [get]
+
 func (r *ReviewHandler) GetAverageRating(c *gin.Context) {
 	ProductID := c.Query("product_id")
 	if ProductID == "" {

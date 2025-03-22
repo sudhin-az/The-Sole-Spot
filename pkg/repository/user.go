@@ -30,7 +30,7 @@ func (r *UserRepository) GetUserByEmail(email string) (models.User, error) {
 	return user, nil
 }
 func (r *UserRepository) SaveOTP(email, otp string, expiry time.Time) error {
-	fmt.Println("email", email)
+	log.Println("email", email)
 	newOTP := models.OTP{
 		Email:     email,
 		OTP:       otp,
@@ -138,16 +138,16 @@ func (r *UserRepository) GetOTPByEmail(email string) (models.OTP, error) {
 }
 
 func (r *UserRepository) GetTempUserByEmail(email string) (models.TempUser, error) {
-	fmt.Println("Email being queried:", email)
+	log.Println("Email being queried:", email)
 	var user models.TempUser
 	email = strings.ToLower(strings.TrimSpace(email))
 	err := r.db.Where("LOWER(email) = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			fmt.Println("Record not found for email", email)
+			log.Println("Record not found for email", email)
 			return models.TempUser{}, fmt.Errorf("temporary user not found for email %s", email)
 		}
-		fmt.Println("Error querrying temp_users table:", err)
+		log.Println("Error querrying temp_users table:", err)
 		return models.TempUser{}, err
 	}
 	return user, nil

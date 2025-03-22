@@ -5,9 +5,9 @@ import (
 	"ecommerce_clean_architecture/pkg/usecase"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"ecommerce_clean_architecture/pkg/utils/response"
+	"log"
 	"strconv"
 
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -23,6 +23,18 @@ func NewUserHandler(u usecase.UserUseCase) *UserHandler {
 		userUseCase: u,
 	}
 }
+
+// UserSignup godoc
+// @Summary User signup
+// @Description Registers a new user and sends an OTP for verification
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User  details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /signup [post]
 
 func (h *UserHandler) UserSignup(c *gin.Context) {
 	var user models.User
@@ -49,12 +61,24 @@ func (h *UserHandler) UserSignup(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// VerifyOTP godoc
+// @Summary Verify OTP
+// @Description Verifies the OTP sent to the user's email and registers the user
+// @Tags Users
+// @Param email path string true "User  email"
+// @Param verifyUser  body models.VerifyOTP true "OTP details"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Router /verify/{email} [post]
+
 func (h *UserHandler) VerifyOTP(c *gin.Context) {
 
 	email := c.Param("email")
 	email = strings.Trim(email, "\"")
 
-	fmt.Println("hellooooooooo", email)
+	log.Println("hellooooooooo", email)
 	if email == "" {
 		errRes := response.UserResponse("Email is required")
 		c.JSON(http.StatusBadRequest, errRes)
@@ -80,9 +104,19 @@ func (h *UserHandler) VerifyOTP(c *gin.Context) {
 
 }
 
+// ResendOTP godoc
+// @Summary Resend OTP
+// @Description Resends the OTP to the user's email
+// @Tags Users
+// @Param email path string true "User  email"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /resend-otp/{email} [post]
+
 func (h *UserHandler) ResendOTP(c *gin.Context) {
 	email := c.Param("email")
-	fmt.Println("Email:", email)
+	log.Println("Email:", email)
 	if err := h.userUseCase.ResendOTP(email); err != nil {
 		errRes := response.ClientResponse(http.StatusInternalServerError, "Failed to resend OTP", nil, err.Error())
 		c.JSON(http.StatusInternalServerError, errRes)
@@ -92,6 +126,18 @@ func (h *UserHandler) ResendOTP(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "OTP resent successfully", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// UserLogin godoc
+// @Summary User login
+// @Description Logs in a user and returns user details
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param loginReq body models.UserLogin true "Login details"
+// @Success 201 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /login [post]
 
 func (h *UserHandler) UserLogin(c *gin.Context) {
 	var loginReq models.UserLogin
@@ -119,6 +165,15 @@ func (h *UserHandler) UserLogin(c *gin.Context) {
 	c.JSON(http.StatusCreated, successRes)
 }
 
+// GetProducts godoc
+// @Summary Get all products
+// @Description Retrieves a list of all products
+// @Tags Users
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /products [get]
+
 func (h *UserHandler) GetProducts(c *gin.Context) {
 	products, err := h.userUseCase.GetProducts()
 	if err != nil {
@@ -129,6 +184,16 @@ func (h *UserHandler) GetProducts(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the products", products, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// ListCategory godoc
+// @Summary Get all categories
+// @Description Retrieves a list of all product categories
+// @Tags Users
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /categories [get]
+
 func (cat *UserHandler) ListCategory(c *gin.Context) {
 	category, err := cat.userUseCase.ListCategory()
 	if err != nil {
@@ -139,6 +204,17 @@ func (cat *UserHandler) ListCategory(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the categories", category, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// UserProfile godoc
+// @Summary Get user profile
+// @Description Retrieves the profile details of the authenticated user
+// @Tags Users
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 404 {object} response.ClientResponse
+// @Router /profile [get]
 
 func (u *UserHandler) UserProfile(c *gin.Context) {
 	userID, ok := c.Get("id")
@@ -164,6 +240,19 @@ func (u *UserHandler) UserProfile(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "User profile details retrieved successfully", userProfile, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// UpdateProfile godoc
+// @Summary Update user profile
+// @Description Updates the profile details of the authenticated user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param profile body models.User true "User  profile details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 404 {object} response.ClientResponse
+// @Router /profile [put]
 
 func (u *UserHandler) UpdateProfile(c *gin.Context) {
 	var profile models.User
@@ -201,6 +290,18 @@ func (u *UserHandler) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// SendOTP godoc
+// @Summary Send OTP
+// @Description Sends an OTP to the user's email for verification
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param sendOTP body models.SendOTP true "Email to send OTP"
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /send-otp [post]
+
 func (h *UserHandler) SendOTP(c *gin.Context) {
 	var sendOTP models.SendOTP
 	if err := c.ShouldBindJSON(&sendOTP); err != nil {
@@ -218,6 +319,20 @@ func (h *UserHandler) SendOTP(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, response.ClientResponse(http.StatusOK, "OTP sent successfully", responseData, nil))
 }
+
+// ForgotPassword godoc
+// @Summary Forgot Password
+// @Description Resets the user's password using the provided OTP and new password
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param input body models.ForgotPassword true "Forgot password details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /forgot-password [post]
+
 func (h *UserHandler) ForgotPassword(c *gin.Context) {
 	var input models.ForgotPassword
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -245,6 +360,20 @@ func (h *UserHandler) ForgotPassword(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, response.ClientResponse(http.StatusOK, "Password reset successfully", user, nil))
 }
+
+// ChangePassword godoc
+// @Summary Change Password
+// @Description Changes the user's password
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param input body models.NewPassword true "New password details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Failure 404 {object} response.ClientResponse
+// @Router /change-password [post]
+
 func (h *UserHandler) ChangePassword(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -274,6 +403,19 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Password changed successfully", userPassword, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// AddAddress godoc
+// @Summary Add a new address
+// @Description Adds a new address for the authenticated user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param address body models.AddAddress true "Address details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /addresses [post]
+
 func (u *UserHandler) AddAddress(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -306,6 +448,20 @@ func (u *UserHandler) AddAddress(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Successfully added address", address, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// UpdateAddress godoc
+// @Summary Update an existing address
+// @Description Updates the details of an existing address for the authenticated user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param id query int true "Address ID"
+// @Param address body models.AddAddress true "Updated address details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /addresses [put]
+
 func (u *UserHandler) UpdateAddress(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -354,6 +510,15 @@ func (u *UserHandler) UpdateAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// DeleteAddress godoc
+// @Summary Delete an address
+// @Description Deletes an existing address for the authenticated user
+// @Tags Users
+// @Param id query int true "Address ID"
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /addresses [delete]
+
 func (u *UserHandler) DeleteAddress(c *gin.Context) {
 	idParam := c.Query("id")
 	if idParam == "" {
@@ -376,6 +541,16 @@ func (u *UserHandler) DeleteAddress(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Successfully deleted address", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// GetAllAddresses godoc
+// @Summary Get all addresses
+// @Description Retrieves all addresses for the authenticated user
+// @Tags Users
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /addresses [get]
 
 func (u *UserHandler) GetAllAddresses(c *gin.Context) {
 	userID, ok := c.Get("id")

@@ -20,6 +20,17 @@ func NewProductHandler(usecase usecase.ProductUseCase) *ProductHandler {
 	}
 }
 
+// AddProduct godoc
+// @Summary Add a new product
+// @Description Adds a new product to the inventory
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param product body models.AddProduct true "Product details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /products [post]
+
 func (p *ProductHandler) AddProduct(c *gin.Context) {
 	var addproduct models.AddProduct
 
@@ -40,6 +51,18 @@ func (p *ProductHandler) AddProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 
 }
+
+// UpdateProduct godoc
+// @Summary Update an existing product
+// @Description Updates the details of an existing product by its ID
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id query int true "Product ID"
+// @Param product body models.ProductResponse true "Updated product details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /products [put]
 
 func (p *ProductHandler) UpdateProduct(c *gin.Context) {
 	productID, err := strconv.Atoi(c.Query("id"))
@@ -66,6 +89,16 @@ func (p *ProductHandler) UpdateProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// DeleteProduct godoc
+// @Summary Delete a product
+// @Description Deletes a product from the inventory by its ID
+// @Tags Products
+// @Param id query int true "Product ID"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /products [delete]
+
 func (p *ProductHandler) DeleteProduct(c *gin.Context) {
 	productID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -82,6 +115,17 @@ func (p *ProductHandler) DeleteProduct(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "the product is deleted", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// SearchProduct godoc
+// @Summary Search for products
+// @Description Searches for products based on category and sorting criteria
+// @Tags Products
+// @Param category_id query string false "Category ID"
+// @Param sort_by query string false "Sort by criteria"
+// @Produce json
+// @Success 200 {object} response.ClientResponse
+// @Failure 500 {object} response.ClientResponse
+// @Router /products/search [get]
 
 func (p *ProductHandler) SearchProduct(c *gin.Context) {
 

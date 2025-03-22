@@ -4,7 +4,7 @@ import (
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
-	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -37,7 +37,7 @@ func (o *OrderRepository) RollbackTransaction(tx *gorm.DB) error {
 func (o *OrderRepository) DoesCartExist(userID int) (bool, error) {
 	var exist bool
 	err := o.DB.Raw("select exists(select * from carts where user_id = ?)", userID).Scan(&exist).Error
-	fmt.Println("Exist", exist)
+	log.Println("Exist", exist)
 	if err != nil {
 		return false, err
 	}
@@ -129,9 +129,9 @@ func (o *OrderRepository) GetProductDetailsFromOrders(tx *gorm.DB, orderID int) 
 	}
 	for i, val := range orderProductDetails {
 		orderProductDetails[i].FinalPrice = FinalPrice[i]
-		fmt.Println("HASHIM________________________", val.FinalPrice, FinalPrice[i])
+		log.Println("HASHIM________________________", val.FinalPrice, FinalPrice[i])
 	}
-	fmt.Println("final____________-price", FinalPrice, orderProductDetails)
+	log.Println("final____________-price", FinalPrice, orderProductDetails)
 	return orderProductDetails, nil
 }
 
@@ -219,7 +219,7 @@ func (o *OrderRepository) FetchOrderDetailsFromDB(orderID string) (models.Orders
 			}
 		}
 	}
-	fmt.Println("rawTotal", RawTotal)
+	log.Println("rawTotal", RawTotal)
 	var items []models.InvoiceItem
 	for _, orderItem := range orderItems {
 		var product domain.Products
@@ -248,13 +248,13 @@ func (o *OrderRepository) FetchOrderDetailsFromDB(orderID string) (models.Orders
 		Discount:            order.DiscountAmount,
 		DeliveryCharge:      order.DeliveryCharge,
 	}
-	fmt.Println("orderDetails", orderDetails)
+	log.Println("orderDetails", orderDetails)
 	return orderDetails, nil
 }
 func (o *OrderRepository) GetOrderDetails(userID int) ([]models.FullOrderDetails, error) {
 	var orderDetails []models.OrderDetails
 	o.DB.Raw("SELECT order_id, final_price, discount_amount, order_status, payment_status FROM orders WHERE user_id = ?", userID).Scan(&orderDetails)
-	fmt.Println(orderDetails)
+	log.Println(orderDetails)
 
 	var fullOrderDetails []models.FullOrderDetails
 	for _, od := range orderDetails {

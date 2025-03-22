@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -24,16 +23,16 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	var config Config
 
-	viper.AddConfigPath("C:/Users/hp/Desktop/Ecommerce_clean_architecture/cmd1")
+	viper.AddConfigPath("C:/Users/hp/Desktop/Ecommerce_clean_architecture/cmd")
 	viper.SetConfigName("config")
 	viper.SetConfigType("env")
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return config, err
 	}
 	if err := viper.Unmarshal(&config); err != nil {
-		fmt.Println("errrrr", err)
+		log.Println("errrrr", err)
 	}
 	return config, nil
 }

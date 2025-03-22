@@ -276,7 +276,7 @@ func (o *OrderUseCase) CancelOrders(orderID string, userID int) error {
 		log.Println("5------------", err)
 		return errors.New("cannot show the payment status")
 	}
-	fmt.Println("paymentStatus: ", paymentStatus)
+	log.Println("paymentStatus: ", paymentStatus)
 
 	orderStatus, err := o.orderRepository.GetOrderStatus(tx, orderIDInt)
 	if err != nil {
@@ -293,14 +293,14 @@ func (o *OrderUseCase) CancelOrders(orderID string, userID int) error {
 		return errors.New("the order is already cancelled, so no point in cancelling")
 	}
 
-	fmt.Println("Proceeding with cancellation...")
+	log.Println("Proceeding with cancellation...")
 
 	err = o.orderRepository.CancelOrders(tx, orderIDInt)
 	if err != nil {
 		log.Println("7------------", err)
 		return err
 	}
-	fmt.Println("Order status updated to cancelled.")
+	log.Println("Order status updated to cancelled.")
 
 	err = o.orderRepository.UpdatePaymentStatus(tx, orderIDInt, "refunded")
 	if err != nil {
@@ -308,11 +308,11 @@ func (o *OrderUseCase) CancelOrders(orderID string, userID int) error {
 		return err
 	}
 	var totalRefundAmount float64
-	fmt.Println("OrderProductDetails:", orderProductDetails)
+	log.Println("OrderProductDetails:", orderProductDetails)
 	for _, product := range orderProductDetails {
 		totalRefundAmount += product.FinalPrice
 	}
-	fmt.Println("totalrefundamount", totalRefundAmount)
+	log.Println("totalrefundamount", totalRefundAmount)
 
 	// if totalRefundAmount <= 0 {
 	// 	return errors.New("refund amount is zero; cannot update wallet")
@@ -323,7 +323,7 @@ func (o *OrderUseCase) CancelOrders(orderID string, userID int) error {
 		log.Println("9------------", err)
 		return err
 	}
-	fmt.Println("New wallet balance after refund:", newBalance)
+	log.Println("New wallet balance after refund:", newBalance)
 
 	walletTxn := models.WalletTransaction{
 		UserID:      userID,
@@ -555,8 +555,8 @@ func (o *OrderUseCase) GenerateInvoice(orderID string, userID int) (*gofpdf.Fpdf
 		return nil, errors.New("Unable to fetch order Details")
 	}
 
-	fmt.Println("Order ID:", orderID)
-	fmt.Println("Fetched Order Status:", orderDetails.OrderStatus)
+	log.Println("Order ID:", orderID)
+	log.Println("Fetched Order Status:", orderDetails.OrderStatus)
 
 	if orderDetails.OrderStatus != models.Confirm {
 		return nil, errors.New("order status is not success")
@@ -579,7 +579,7 @@ func (o *OrderUseCase) GenerateInvoice(orderID string, userID int) (*gofpdf.Fpdf
 		orderDetails.CustomerAddress.City,
 		orderDetails.CustomerAddress.Pin,
 	)
-	fmt.Println("CustomerName:", buyerInfo)
+	log.Println("CustomerName:", buyerInfo)
 	// Initialize PDF
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()

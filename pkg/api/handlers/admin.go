@@ -4,7 +4,7 @@ import (
 	"ecommerce_clean_architecture/pkg/usecase"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"ecommerce_clean_architecture/pkg/utils/response"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -20,6 +20,17 @@ func NewAdminHandler(usecase usecase.AdminUseCase) *AdminHandler {
 		adminUseCase: usecase,
 	}
 }
+
+// @Summary Create a new admin
+// @Description Creates a new admin account
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Param admin body models.AdminSignUp true "Admin details"
+// @Success 201 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/signup [post]
 
 func (ad *AdminHandler) SignUpHandler(c *gin.Context) {
 	var admin models.AdminSignUp
@@ -41,6 +52,18 @@ func (ad *AdminHandler) SignUpHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, successRes)
 }
 
+//AdminLogin godoc
+// @Summary Login an admin
+// @Description Logs in an admin account
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Param admin body models.AdminLogin true "Admin login details"
+// @Success 201 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/login [post]
+
 func (ad *AdminHandler) LoginHandler(c *gin.Context) {
 	var admin models.AdminLogin
 
@@ -61,6 +84,15 @@ func (ad *AdminHandler) LoginHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, successRes)
 }
 
+// GetUsers godoc
+// @Summary Get all users
+// @Description Retrieves a list of all users
+// @Tags Admin
+// @Produce json
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/users [get]
+
 func (ad *AdminHandler) GetUsers(c *gin.Context) {
 
 	users, err := ad.adminUseCase.GetUsers()
@@ -72,6 +104,17 @@ func (ad *AdminHandler) GetUsers(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Successfully retrieved the users", users, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// BlockUser godoc
+// @Summary Block a user
+// @Description Blocks a user account
+// @Tags Admin
+// @Produce json
+// @Param id query int true "User ID to block"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/block-user [get]
 
 func (ad *AdminHandler) BlockUser(c *gin.Context) {
 	UserID, err := strconv.Atoi(c.Query("id"))
@@ -91,6 +134,17 @@ func (ad *AdminHandler) BlockUser(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// UnBlockUser godoc
+// @Summary Unblock a user
+// @Description Unblocks a user account
+// @Tags Admin
+// @Produce json
+// @Param id query int true "User ID to unblock"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/unblock-user [get]
+
 func (ad *AdminHandler) UnBlockUsers(c *gin.Context) {
 	UserID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -109,6 +163,15 @@ func (ad *AdminHandler) UnBlockUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// ListOrders godoc
+// @Summary List all orders
+// @Description Retrieves a list of all orders
+// @Tags Admin
+// @Produce json
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/orders [get]
+
 func (ad *AdminHandler) ListOrders(c *gin.Context) {
 	fullOrderDetails, err := ad.adminUseCase.GetAllOrderDetails()
 	if err != nil {
@@ -126,6 +189,17 @@ func (ad *AdminHandler) ListOrders(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Full Order Details", fullOrderDetails, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// AdminCancelOrders godoc
+// @Summary Cancel an order
+// @Description Cancels an order
+// @Tags Admin
+// @Produce json
+// @Param order_id query string true "Order ID to cancel"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/cancel-order [patch]
 
 func (ad *AdminHandler) AdminCancelOrders(c *gin.Context) {
 	orderID := c.Query("order_id")
@@ -153,6 +227,19 @@ func (ad *AdminHandler) AdminCancelOrders(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Order cancelled successfully", nil, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// ChangeOrderStatus godoc
+// @Summary Change order status
+// @Description Changes the status of an order
+// @Tags Admin
+// @Accept json
+// @Produce json
+// @Param order_id query string true "Order ID to update"
+// @Param order_status body string true "New order status"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/update-order-status [put]
 
 func (ad *AdminHandler) ChangeOrderStatus(c *gin.Context) {
 	orderID := c.Query("order_id")
@@ -191,6 +278,20 @@ func (ad *AdminHandler) ChangeOrderStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// SalesReport godoc
+// @Summary Generate sales report
+// @Description Generates a sales report for a given date range
+// @Tags Admin
+// @Produce json
+// @Param start_date query string false "Start date of the report period"
+// @Param end_date query string false "End date of the report period"
+// @Param limit query string false "Limit the report to a specific time period (day, week, month, year)"
+// @Param order_status query string false "Filter the report by order status"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/sales-report [get]
+
 func (ad *AdminHandler) SalesReport(c *gin.Context) {
 	adminID, ok := c.Get("id")
 	if !ok {
@@ -198,7 +299,7 @@ func (ad *AdminHandler) SalesReport(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, errRes)
 		return
 	}
-	fmt.Println("AdminId: ", adminID)
+	log.Println("AdminId: ", adminID)
 
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
@@ -227,6 +328,20 @@ func (ad *AdminHandler) SalesReport(c *gin.Context) {
 
 	c.JSON(http.StatusOK, successRes)
 }
+
+// GenerateSalesReport godoc
+// @Summary Generate sales report PDF
+// @Description Generates a sales report PDF for a given date range
+// @Tags Admin
+// @Produce application/pdf
+// @Param start_date query string false "Start date of the report period"
+// @Param end_date query string false "End date of the report period"
+// @Param limit query string false "Limit the report to a specific time period (day, week, month, year)"
+// @Param order_status query string false "Filter the report by order status"
+// @Success 200 {file} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/sales-report-pdf [get]
 
 func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	_, ok := c.Get("id")
@@ -269,6 +384,15 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	c.Data(http.StatusOK, "application/pdf", pdfData)
 }
 
+// BestSellingProduct godoc
+// @Summary Get best selling products
+// @Description Retrieves a list of best selling products
+// @Tags Admin
+// @Produce json
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/best-selling-products [get]
+
 func (ad *AdminHandler) BestSellingProduct(c *gin.Context) {
 	_, ok := c.Get("id")
 	if !ok {
@@ -285,6 +409,15 @@ func (ad *AdminHandler) BestSellingProduct(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Best Selling Products Retrieved Successfully", bestSellingProduct, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// BestSellingCategory godoc
+// @Summary Get best selling categories
+// @Description Retrieves a list of best selling categories
+// @Tags Admin
+// @Produce json
+// @Success 200 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /admin/best-selling-categories [get]
 
 func (ad *AdminHandler) BestSellingCategory(c *gin.Context) {
 	_, ok := c.Get("id")

@@ -4,6 +4,7 @@ import (
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"fmt"
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -143,12 +144,12 @@ func (ad *AdminRepository) GetAllOrderDetails() ([]models.FullOrderDetails, erro
 
 	err := ad.DB.Raw("SELECT order_id, final_price, order_status, payment_status FROM orders").Scan(&orderDetails).Error
 	if err != nil {
-		fmt.Println("Error fetching order details:", err)
+		log.Println("Error fetching order details:", err)
 		return nil, err
 	}
 
 	if len(orderDetails) == 0 {
-		fmt.Println("No orders found")
+		log.Println("No orders found")
 		return nil, nil
 	}
 
@@ -167,7 +168,7 @@ func (ad *AdminRepository) GetAllOrderDetails() ([]models.FullOrderDetails, erro
 			WHERE order_items.order_id = ?`, od.OrderId).Scan(&orderProductDetails).Error
 
 		if err != nil {
-			fmt.Println("Error fetching product details for order_id:", od.OrderId, "Error:", err)
+			log.Println("Error fetching product details for order_id:", od.OrderId, "Error:", err)
 			return nil, err
 		}
 
@@ -264,7 +265,7 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) 
 
 	endDate = endDate.Add(24*time.Hour - time.Nanosecond)
 
-	fmt.Println("Fetching orders between:", startDate, "and", endDate, "with status:", orderStatus)
+	log.Println("Fetching orders between:", startDate, "and", endDate, "with status:", orderStatus)
 
 	query := ad.DB.Where("order_date BETWEEN ? AND ?", startDate, endDate)
 	if orderStatus != "" {
@@ -273,12 +274,12 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) 
 
 	err = query.Find(&orders).Error
 	if err != nil {
-		fmt.Println("Query Error:", err)
+		log.Println("Query Error:", err)
 		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error fetching orders: %v", err)
 	}
 
 	if len(orders) == 0 {
-		fmt.Println("No orders found for given range.")
+		log.Println("No orders found for given range.")
 		return models.OrderCount{TotalOrder: 0}, models.AmountInformation{}, nil
 	}
 
@@ -301,7 +302,7 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) 
 		GROUP BY order_status`, startDate, endDate).Scan(&statusCounts).Error; err != nil {
 		return models.OrderCount{}, models.AmountInformation{}, fmt.Errorf("error counting order items: %v", err)
 	}
-	fmt.Println("Number of orders fetched:", len(orders))
+	log.Println("Number of orders fetched:", len(orders))
 
 	orderStatusCounts := make(map[string]int64)
 	var totalCount int64
@@ -309,13 +310,13 @@ func (ad *AdminRepository) GetTotalOrders(fromDate, toDate, orderStatus string) 
 		orderStatusCounts[sc.OrderStatus] = sc.Count
 		totalCount += sc.Count
 	}
-	fmt.Println("OrderStatusCounts:", orderStatusCounts)
-	fmt.Println("PendingOrders:", orderStatusCounts[models.Pending])
-	fmt.Println("SuccessOrders:", orderStatusCounts[models.Confirm])
-	fmt.Println("ShippedOrders:", orderStatusCounts[models.Shipped])
-	fmt.Println("DeliveredOrders:", orderStatusCounts[models.Delivered])
-	fmt.Println("CancelledOrders:", orderStatusCounts[models.Cancelled])
-	fmt.Println("ReturnOrders:", orderStatusCounts[models.Return])
+	log.Println("OrderStatusCounts:", orderStatusCounts)
+	log.Println("PendingOrders:", orderStatusCounts[models.Pending])
+	log.Println("SuccessOrders:", orderStatusCounts[models.Confirm])
+	log.Println("ShippedOrders:", orderStatusCounts[models.Shipped])
+	log.Println("DeliveredOrders:", orderStatusCounts[models.Delivered])
+	log.Println("CancelledOrders:", orderStatusCounts[models.Cancelled])
+	log.Println("ReturnOrders:", orderStatusCounts[models.Return])
 
 	return models.OrderCount{
 		TotalOrder:     uint(totalCount),

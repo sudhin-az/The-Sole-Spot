@@ -5,6 +5,7 @@ import (
 	"ecommerce_clean_architecture/pkg/domain"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"fmt"
+	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -42,6 +43,6 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	fmt.Println("Database migrated successfully!")
+	log.Println("Database migrated successfully!")
 	return db, nil
 }

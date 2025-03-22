@@ -20,6 +20,15 @@ func NewCategoryHandler(usecase usecase.CategoryUseCase) *CategoryHandler {
 	}
 }
 
+// @Summary Add a new category
+// @Description Creates a new category
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param category body domain.Category true "Category details"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Router /category [post]
 func (cat *CategoryHandler) AddCategory(c *gin.Context) {
 	var category domain.Category
 
@@ -38,6 +47,17 @@ func (cat *CategoryHandler) AddCategory(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "the category is added successfully", CategoryResponse, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// @Summary Update an existing category
+// @Description Updates an existing category
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param id query int true "Category ID to update"
+// @Param category body domain.Category true "Updated category details"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Router /category [put]
 
 func (cat *CategoryHandler) UpdateCategory(c *gin.Context) {
 	categoryID, err := strconv.Atoi(c.Query("id"))
@@ -64,6 +84,15 @@ func (cat *CategoryHandler) UpdateCategory(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "the category is updated", updateCategory, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// @Summary Delete a category
+// @Description Deletes a category by ID
+// @Tags Category
+// @Produce json
+// @Param id query int true "Category ID to delete"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Router /category [delete]
 
 func (cat *CategoryHandler) DeleteCategory(c *gin.Context) {
 	categoryID, err := strconv.Atoi(c.Query("id"))

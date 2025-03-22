@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type ServerHTTP struct {
@@ -19,6 +22,9 @@ func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.Auth
 	paymentHandler *handlers.PaymentHandler, walletHandler *handlers.WalletHandler, wishlistHandler *handlers.WishlistHandler, couponHandler *handlers.CouponHandler) *ServerHTTP {
 
 	router := gin.New()
+
+	//add swagger
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	templatePath, _ := filepath.Abs("../templates/*")
 	router.LoadHTMLGlob(templatePath)

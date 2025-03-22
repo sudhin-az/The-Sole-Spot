@@ -20,6 +20,18 @@ func NewWishlistHandler(usecase usecase.WishlistUseCase) *WishlistHandler {
 	}
 }
 
+// AddToWishList godoc
+// @Summary Add a product to the wishlist
+// @Description Adds a specified product to the authenticated user's wishlist
+// @Tags Wishlist
+// @Accept json
+// @Produce json
+// @Param wishlist body models.WishlistRequest true "Wishlist request details"
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /wishlist [post]
+
 func (w *WishlistHandler) AddToWishList(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -52,6 +64,16 @@ func (w *WishlistHandler) AddToWishList(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 }
 
+// RemoveFromWishList godoc
+// @Summary Remove a product from the wishlist
+// @Description Removes a specified product from the authenticated user's wishlist
+// @Tags Wishlist
+// @Param product_id query int true "Product ID"
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /wishlist [delete]
+
 func (w *WishlistHandler) RemoveFromWishList(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -72,6 +94,16 @@ func (w *WishlistHandler) RemoveFromWishList(c *gin.Context) {
 	c.JSON(http.StatusOK, successRes)
 
 }
+
+// GetWishList godoc
+// @Summary Get the user's wishlist
+// @Description Retrieves the wishlist for the authenticated user
+// @Tags Wishlist
+// @Success 200 {object} response.ClientResponse
+// @Failure 401 {object} response.ClientResponse
+// @Failure 400 {object} response.ClientResponse
+// @Router /wishlist [get]
+
 func (w *WishlistHandler) GetWishList(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {

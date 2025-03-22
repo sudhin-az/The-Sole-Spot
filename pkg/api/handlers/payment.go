@@ -4,7 +4,7 @@ import (
 	"ecommerce_clean_architecture/pkg/usecase"
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"ecommerce_clean_architecture/pkg/utils/response"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,6 +19,18 @@ type PaymentHandler struct {
 func NewPaymentHandler(paymentUsecase usecase.PaymentUsecase) *PaymentHandler {
 	return &PaymentHandler{PaymentUsecase: paymentUsecase}
 }
+
+// @Summary Create a new payment
+// @Description Creates a new payment order
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param order_id query string true "Order ID"
+// @Param user_id query string true "User ID"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /payment [get]
 
 func (pay *PaymentHandler) CreatePayment(c *gin.Context) {
 	orderID := c.Query("order_id")
@@ -41,9 +53,9 @@ func (pay *PaymentHandler) CreatePayment(c *gin.Context) {
 			return
 		}
 	}
-	fmt.Println("OrderDetails: ", orderDetail)
-	fmt.Println("OrderID is: ", orderID)
-	fmt.Println("razorID: ", razorID)
+	log.Println("OrderDetails: ", orderDetail)
+	log.Println("OrderID is: ", orderID)
+	log.Println("razorID: ", razorID)
 	c.HTML(
 		http.StatusOK, "index.html", gin.H{
 			"final_price": orderDetail.FinalPrice * 100,
@@ -54,6 +66,18 @@ func (pay *PaymentHandler) CreatePayment(c *gin.Context) {
 			"total":       orderDetail.FinalPrice,
 		})
 }
+
+// @Summary Verify online payment
+// @Description Verifies an online payment transaction
+// @Tags Payment
+// @Accept json
+// @Produce json
+// @Param body body models.OnlinePaymentVerification true "Payment Verification Details"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 500 {object} response.Response{}
+// @Router /payment/verify [post]
+
 func (pay *PaymentHandler) OnlinePaymentVerification(c *gin.Context) {
 	var onlinePaymentDetails models.OnlinePaymentVerification
 
@@ -71,6 +95,14 @@ func (pay *PaymentHandler) OnlinePaymentVerification(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "Successfully updated payment details", order, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
+// @Summary Payment success page
+// @Description Renders the success page after payment
+// @Tags Payment
+// @Produce html
+// @Success 200 {string} string "HTML Page"
+// @Router /payment/success [get]
+
 func (pay *PaymentHandler) PaymentSuccess(c *gin.Context) {
 	c.HTML(http.StatusOK, "success.html", gin.H{})
 }

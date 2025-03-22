@@ -19,6 +19,19 @@ func NewCartHandler(usecase usecase.CartUseCase) *CartHandler {
 	}
 }
 
+// @Summary Add a product to cart
+// @Description Adds a product to the user's cart
+// @Tags Cart
+// @Accept json
+// @Produce json
+// @Param id header int true "User ID"
+// @Param product_id body int true "Product ID to add to cart"
+// @Param quantity body int true "Quantity of the product to add to cart"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 401 {object} response.Response{}
+// @Router /cart/add [post]
+
 func (rt *CartHandler) AddToCart(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -61,6 +74,17 @@ func (rt *CartHandler) AddToCart(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "The product is added to the cart successfully", cart, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+// @Summary Remove a product from cart
+// @Description Removes a product from the user's cart
+// @Tags Cart
+// @Produce json
+// @Param id header int true "User ID"
+// @Param product_id query string true "Product ID to remove from cart"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 401 {object} response.Response{}
+// @Router /cart/remove [delete]
+
 func (rt *CartHandler) RemoveFromCart(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -92,6 +116,16 @@ func (rt *CartHandler) RemoveFromCart(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "product is removed successfully", cart, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+// @Summary Display cart items
+// @Description Displays the products in the user's cart
+// @Tags Cart
+// @Produce json
+// @Param id header int true "User ID"
+// @Success 200 {object} response.Response{}
+// @Failure 400 {object} response.Response{}
+// @Failure 401 {object} response.Response{}
+// @Router /cart [get]
+
 func (rt *CartHandler) DisplayCart(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {

@@ -8,6 +8,7 @@ import (
 	"ecommerce_clean_architecture/pkg/utils/models"
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -35,7 +36,7 @@ func (uc *UserUseCase) UserSignup(user models.User) (models.TokenUsers, error) {
 	if uc.userRepo.IsEmailExists(user.Email) || uc.userRepo.IsPhoneExists(user.Phone) {
 		return models.TokenUsers{}, errors.New("user already exists")
 	}
-	fmt.Println("email", user.Email)
+	log.Println("email", user.Email)
 	hashedPassword, err := helper.HashPassword(user.Password)
 	if err != nil {
 		return models.TokenUsers{}, err
@@ -46,7 +47,7 @@ func (uc *UserUseCase) UserSignup(user models.User) (models.TokenUsers, error) {
 	otpExpiry := time.Now().Add(3 * time.Minute)
 
 	err = uc.userRepo.SaveOrUpdateOTP(user.Email, otp, otpExpiry)
-	fmt.Println("errrrrrrrrr", err)
+	log.Println("errrrrrrrrr", err)
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
@@ -68,7 +69,7 @@ func (uc *UserUseCase) UserSignup(user models.User) (models.TokenUsers, error) {
 		return models.TokenUsers{}, err
 	}
 
-	fmt.Println("Token users", tokenusers)
+	log.Println("Token users", tokenusers)
 	return models.TokenUsers{}, nil
 }
 func ValidateUser(user models.User) error {
@@ -163,7 +164,7 @@ func (uc *UserUseCase) SaveTempUserAndGenerateOTP(user models.User) (models.Toke
 	if err != nil {
 		return models.TokenUsers{}, err
 	}
-	fmt.Println("OTP Expiry time:", otpExpiry)
+	log.Println("OTP Expiry time:", otpExpiry)
 
 	err = utils.SendOTPEmail(user.Email, otp)
 	if err != nil {
@@ -231,7 +232,7 @@ func (uc *UserUseCase) GenerateAndSendOTP(email string) (string, error) {
 
 func (uc *UserUseCase) VerifyOTPAndRegisterUser(email string, otp string) (models.TokenUsers, error) {
 	err := uc.VerifyOTP(email, models.VerifyOTP{OTP: otp})
-	fmt.Println(err)
+	log.Println(err)
 	if err != nil {
 		return models.TokenUsers{}, errors.New("OTP verification failed")
 	}
@@ -279,10 +280,10 @@ func (uc *UserUseCase) VerifyOTPAndRegisterUser(email string, otp string) (model
 }
 
 func (uc *UserUseCase) ResendOTP(email string) error {
-	fmt.Println("Email:", email)
+	log.Println("Email:", email)
 	otp := utils.GenerateOTP()
 	otpExpiry := time.Now().Add(3 * time.Minute)
-	fmt.Println("Email, Otp, OtpExpiry", email, otp, otpExpiry)
+	log.Println("Email, Otp, OtpExpiry", email, otp, otpExpiry)
 	err := uc.userRepo.UpdateOTP(models.OTP{
 		Email:     email,
 		OTP:       otp,
