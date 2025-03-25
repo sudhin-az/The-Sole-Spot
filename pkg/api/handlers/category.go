@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/domain"
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/domain"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"net/http"
 	"strconv"
 
@@ -58,7 +58,6 @@ func (cat *CategoryHandler) AddCategory(c *gin.Context) {
 // @Success 200 {object} response.Response{}
 // @Failure 400 {object} response.Response{}
 // @Router /category [put]
-
 func (cat *CategoryHandler) UpdateCategory(c *gin.Context) {
 	categoryID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -93,7 +92,6 @@ func (cat *CategoryHandler) UpdateCategory(c *gin.Context) {
 // @Success 200 {object} response.Response{}
 // @Failure 400 {object} response.Response{}
 // @Router /category [delete]
-
 func (cat *CategoryHandler) DeleteCategory(c *gin.Context) {
 	categoryID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {

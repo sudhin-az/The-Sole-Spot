@@ -1,6 +1,6 @@
 package interfaces
 
-import "ecommerce_clean_architecture/pkg/utils/models"
+import "ecommerce_clean_arch/pkg/utils/models"
 
 type WalletRepository interface {
 	CreateOrUpdateWallet(userID string, creditAmount uint) (uint, error)

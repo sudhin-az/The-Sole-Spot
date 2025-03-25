@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"ecommerce_clean_architecture/pkg/domain"
+	"ecommerce_clean_arch/pkg/domain"
 	"errors"
 
 	"gorm.io/gorm"

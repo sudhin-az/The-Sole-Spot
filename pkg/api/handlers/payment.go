@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/models"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"log"
 	"net/http"
 	"strconv"
@@ -31,7 +31,6 @@ func NewPaymentHandler(paymentUsecase usecase.PaymentUsecase) *PaymentHandler {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /payment [get]
-
 func (pay *PaymentHandler) CreatePayment(c *gin.Context) {
 	orderID := c.Query("order_id")
 	userID := c.Query("user_id")
@@ -77,7 +76,6 @@ func (pay *PaymentHandler) CreatePayment(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /payment/verify [post]
-
 func (pay *PaymentHandler) OnlinePaymentVerification(c *gin.Context) {
 	var onlinePaymentDetails models.OnlinePaymentVerification
 
@@ -102,7 +100,6 @@ func (pay *PaymentHandler) OnlinePaymentVerification(c *gin.Context) {
 // @Produce html
 // @Success 200 {string} string "HTML Page"
 // @Router /payment/success [get]
-
 func (pay *PaymentHandler) PaymentSuccess(c *gin.Context) {
 	c.HTML(http.StatusOK, "success.html", gin.H{})
 }

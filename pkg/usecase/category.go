@@ -1,8 +1,8 @@
 package usecase
 
 import (
-	"ecommerce_clean_architecture/pkg/domain"
-	"ecommerce_clean_architecture/pkg/repository"
+	"ecommerce_clean_arch/pkg/domain"
+	"ecommerce_clean_arch/pkg/repository"
 )
 
 type CategoryUseCase struct {

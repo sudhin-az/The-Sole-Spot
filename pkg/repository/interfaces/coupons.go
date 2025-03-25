@@ -1,6 +1,6 @@
 package interfaces
 
-import "ecommerce_clean_architecture/pkg/utils/models"
+import "ecommerce_clean_arch/pkg/utils/models"
 
 type CouponRepository interface {
 	AddCoupon(coupon models.Coupon) (models.CouponResponse, error)

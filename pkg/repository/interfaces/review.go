@@ -1,6 +1,6 @@
 package interfaces
 
-import "ecommerce_clean_architecture/pkg/utils/models"
+import "ecommerce_clean_arch/pkg/utils/models"
 
 type ReviewRepository interface {
 	AddReview(userID int, productID string, Rating float64, Comment string) (models.ReviewResponse, error)

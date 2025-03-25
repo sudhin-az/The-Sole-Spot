@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/helper"
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/models"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/helper"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,7 +36,6 @@ var validate = validator.New()
 // @Success 200 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /coupons [post]
-
 func (coup *CouponHandler) CreateNewCoupon(c *gin.Context) {
 	var newCoupon models.Coupon
 	if err := c.ShouldBindJSON(&newCoupon); err != nil {
@@ -80,7 +79,6 @@ func (coup *CouponHandler) CreateNewCoupon(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /coupons/invalid [delete]
-
 func (coup *CouponHandler) MakeCouponInvalid(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -108,7 +106,6 @@ func (coup *CouponHandler) MakeCouponInvalid(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /coupons [get]
-
 func (coup *CouponHandler) GetAllCoupons(c *gin.Context) {
 	coupons, err := coup.usecase.GetAllCoupons()
 	if err != nil {

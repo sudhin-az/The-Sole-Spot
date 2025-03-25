@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"net/http"
 	"strconv"
 
@@ -31,7 +31,6 @@ func NewCartHandler(usecase usecase.CartUseCase) *CartHandler {
 // @Failure 400 {object} response.Response{}
 // @Failure 401 {object} response.Response{}
 // @Router /cart/add [post]
-
 func (rt *CartHandler) AddToCart(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -74,6 +73,7 @@ func (rt *CartHandler) AddToCart(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "The product is added to the cart successfully", cart, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
 // @Summary Remove a product from cart
 // @Description Removes a product from the user's cart
 // @Tags Cart
@@ -84,7 +84,6 @@ func (rt *CartHandler) AddToCart(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 401 {object} response.Response{}
 // @Router /cart/remove [delete]
-
 func (rt *CartHandler) RemoveFromCart(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -116,6 +115,7 @@ func (rt *CartHandler) RemoveFromCart(c *gin.Context) {
 	successRes := response.ClientResponse(http.StatusOK, "product is removed successfully", cart, nil)
 	c.JSON(http.StatusOK, successRes)
 }
+
 // @Summary Display cart items
 // @Description Displays the products in the user's cart
 // @Tags Cart
@@ -125,7 +125,6 @@ func (rt *CartHandler) RemoveFromCart(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 401 {object} response.Response{}
 // @Router /cart [get]
-
 func (rt *CartHandler) DisplayCart(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {

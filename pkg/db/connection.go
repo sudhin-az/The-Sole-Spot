@@ -1,9 +1,9 @@
 package db
 
 import (
-	"ecommerce_clean_architecture/pkg/config"
-	"ecommerce_clean_architecture/pkg/domain"
-	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/config"
+	"ecommerce_clean_arch/pkg/domain"
+	"ecommerce_clean_arch/pkg/utils/models"
 	"fmt"
 	"log"
 

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/models"
 	"errors"
 	"log"
 

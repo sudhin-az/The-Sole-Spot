@@ -1,8 +1,8 @@
 package usecase
 
 import (
-	"ecommerce_clean_architecture/pkg/repository"
-	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/repository"
+	"ecommerce_clean_arch/pkg/utils/models"
 	"errors"
 )
 

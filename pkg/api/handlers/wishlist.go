@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/models"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"net/http"
 	"strconv"
 
@@ -31,7 +31,6 @@ func NewWishlistHandler(usecase usecase.WishlistUseCase) *WishlistHandler {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /wishlist [post]
-
 func (w *WishlistHandler) AddToWishList(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -73,7 +72,6 @@ func (w *WishlistHandler) AddToWishList(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /wishlist [delete]
-
 func (w *WishlistHandler) RemoveFromWishList(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -103,7 +101,6 @@ func (w *WishlistHandler) RemoveFromWishList(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /wishlist [get]
-
 func (w *WishlistHandler) GetWishList(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {

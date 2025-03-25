@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/models"
 
 	"github.com/gin-gonic/gin"
 )

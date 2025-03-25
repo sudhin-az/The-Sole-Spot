@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/models"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"net/http"
 	"strconv"
 
@@ -30,7 +30,6 @@ func NewProductHandler(usecase usecase.ProductUseCase) *ProductHandler {
 // @Success 200 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /products [post]
-
 func (p *ProductHandler) AddProduct(c *gin.Context) {
 	var addproduct models.AddProduct
 
@@ -63,7 +62,6 @@ func (p *ProductHandler) AddProduct(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /products [put]
-
 func (p *ProductHandler) UpdateProduct(c *gin.Context) {
 	productID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -98,7 +96,6 @@ func (p *ProductHandler) UpdateProduct(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /products [delete]
-
 func (p *ProductHandler) DeleteProduct(c *gin.Context) {
 	productID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -126,7 +123,6 @@ func (p *ProductHandler) DeleteProduct(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /products/search [get]
-
 func (p *ProductHandler) SearchProduct(c *gin.Context) {
 
 	categoryID := c.Query("category_id")

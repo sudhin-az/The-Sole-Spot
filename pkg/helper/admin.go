@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"

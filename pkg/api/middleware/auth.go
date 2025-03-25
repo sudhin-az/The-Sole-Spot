@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"ecommerce_clean_architecture/pkg/helper"
+	"ecommerce_clean_arch/pkg/helper"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

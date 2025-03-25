@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/models"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"log"
 	"net/http"
 	"strconv"
@@ -31,7 +31,6 @@ func NewAdminHandler(usecase usecase.AdminUseCase) *AdminHandler {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/signup [post]
-
 func (ad *AdminHandler) SignUpHandler(c *gin.Context) {
 	var admin models.AdminSignUp
 
@@ -52,7 +51,7 @@ func (ad *AdminHandler) SignUpHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, successRes)
 }
 
-//AdminLogin godoc
+// AdminLogin godoc
 // @Summary Login an admin
 // @Description Logs in an admin account
 // @Tags Admin
@@ -63,7 +62,6 @@ func (ad *AdminHandler) SignUpHandler(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/login [post]
-
 func (ad *AdminHandler) LoginHandler(c *gin.Context) {
 	var admin models.AdminLogin
 
@@ -92,7 +90,6 @@ func (ad *AdminHandler) LoginHandler(c *gin.Context) {
 // @Success 200 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/users [get]
-
 func (ad *AdminHandler) GetUsers(c *gin.Context) {
 
 	users, err := ad.adminUseCase.GetUsers()
@@ -115,7 +112,6 @@ func (ad *AdminHandler) GetUsers(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/block-user [get]
-
 func (ad *AdminHandler) BlockUser(c *gin.Context) {
 	UserID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -144,7 +140,6 @@ func (ad *AdminHandler) BlockUser(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/unblock-user [get]
-
 func (ad *AdminHandler) UnBlockUsers(c *gin.Context) {
 	UserID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
@@ -171,7 +166,6 @@ func (ad *AdminHandler) UnBlockUsers(c *gin.Context) {
 // @Success 200 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/orders [get]
-
 func (ad *AdminHandler) ListOrders(c *gin.Context) {
 	fullOrderDetails, err := ad.adminUseCase.GetAllOrderDetails()
 	if err != nil {
@@ -200,7 +194,6 @@ func (ad *AdminHandler) ListOrders(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/cancel-order [patch]
-
 func (ad *AdminHandler) AdminCancelOrders(c *gin.Context) {
 	orderID := c.Query("order_id")
 	if orderID == "" {
@@ -240,7 +233,6 @@ func (ad *AdminHandler) AdminCancelOrders(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/update-order-status [put]
-
 func (ad *AdminHandler) ChangeOrderStatus(c *gin.Context) {
 	orderID := c.Query("order_id")
 	if orderID == "" {
@@ -291,7 +283,6 @@ func (ad *AdminHandler) ChangeOrderStatus(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/sales-report [get]
-
 func (ad *AdminHandler) SalesReport(c *gin.Context) {
 	adminID, ok := c.Get("id")
 	if !ok {
@@ -342,7 +333,6 @@ func (ad *AdminHandler) SalesReport(c *gin.Context) {
 // @Failure 400 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/sales-report-pdf [get]
-
 func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 	_, ok := c.Get("id")
 	if !ok {
@@ -392,7 +382,6 @@ func (ad *AdminHandler) GenerateSalesReport(c *gin.Context) {
 // @Success 200 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/best-selling-products [get]
-
 func (ad *AdminHandler) BestSellingProduct(c *gin.Context) {
 	_, ok := c.Get("id")
 	if !ok {
@@ -418,7 +407,6 @@ func (ad *AdminHandler) BestSellingProduct(c *gin.Context) {
 // @Success 200 {object} response.Response{}
 // @Failure 500 {object} response.Response{}
 // @Router /admin/best-selling-categories [get]
-
 func (ad *AdminHandler) BestSellingCategory(c *gin.Context) {
 	_, ok := c.Get("id")
 	if !ok {

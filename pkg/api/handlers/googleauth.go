@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
+	"ecommerce_clean_arch/pkg/usecase"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +22,6 @@ func NewAuthHandler(authUseCase *usecase.AuthUseCase) *AuthHandler {
 // @Produce json
 // @Success 302 {object} gin.H{"url": "string"} "Redirects to Google login URL"
 // @Router /auth/google/login [get]
-
 func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 	url := h.authUseCase.HandleGoogleLogin()
 	c.Redirect(http.StatusTemporaryRedirect, url)
@@ -39,7 +38,6 @@ func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 // @Failure 400 {object} gin.H{"error": "string"} "Missing 'code' query parameter"
 // @Failure 500 {object} gin.H{"error": "string"} "Internal server error"
 // @Router /auth/google/callback [get]
-
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {

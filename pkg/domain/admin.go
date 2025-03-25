@@ -1,6 +1,6 @@
 package domain
 
-import "ecommerce_clean_architecture/pkg/utils/models"
+import "ecommerce_clean_arch/pkg/utils/models"
 
 type AdminDetails struct {
 	ID       int    `json:"id" gorm:"primary key,not null"`

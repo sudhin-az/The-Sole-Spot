@@ -1,6 +1,6 @@
 package interfaces
 
-import "ecommerce_clean_architecture/pkg/domain"
+import "ecommerce_clean_arch/pkg/domain"
 
 type CategoryUseCase interface {
 	AddCategory(category domain.Category) (domain.Category, error)

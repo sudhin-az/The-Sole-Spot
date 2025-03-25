@@ -2,10 +2,10 @@ package usecase
 
 import (
 	"bytes"
-	"ecommerce_clean_architecture/pkg/domain"
-	"ecommerce_clean_architecture/pkg/helper"
-	"ecommerce_clean_architecture/pkg/repository"
-	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/domain"
+	"ecommerce_clean_arch/pkg/helper"
+	"ecommerce_clean_arch/pkg/repository"
+	"ecommerce_clean_arch/pkg/utils/models"
 	"errors"
 	"fmt"
 	"log"

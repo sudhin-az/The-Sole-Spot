@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/models"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +32,6 @@ func NewOrderHandler(useCase usecase.OrderUseCase) *OrderHandler {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /orders/cart [post]
-
 func (o *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 	couponCode := c.Query("coupon_code")
 	if couponCode == "" {
@@ -87,7 +86,6 @@ func (o *OrderHandler) OrderItemsFromCart(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 401 {object} response.ClientResponse
 // @Router /orders [get]
-
 func (o *OrderHandler) ViewOrders(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -123,7 +121,6 @@ func (o *OrderHandler) ViewOrders(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 401 {object} response.ClientResponse
 // @Router /orders/cancel [put]
-
 func (o *OrderHandler) CancelOrders(c *gin.Context) {
 	orderID := c.Query("order_id")
 	if orderID == "" {
@@ -161,7 +158,6 @@ func (o *OrderHandler) CancelOrders(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 401 {object} response.ClientResponse
 // @Router /orders/item/cancel [put]
-
 func (o *OrderHandler) CancelOrderItem(c *gin.Context) {
 	orderItemID := c.Query("order_item_id")
 	if orderItemID == "" {
@@ -233,7 +229,6 @@ func (o *OrderHandler) ReturnUserOrder(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /orders/invoice [get]
-
 func (o *OrderHandler) GenerateInvoice(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {

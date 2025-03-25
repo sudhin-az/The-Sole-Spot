@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"ecommerce_clean_architecture/pkg/domain"
-	"ecommerce_clean_architecture/pkg/utils"
-	"ecommerce_clean_architecture/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/domain"
+	"ecommerce_clean_arch/pkg/utils"
+	"ecommerce_clean_arch/pkg/utils/models"
 	"errors"
 	"fmt"
 	"log"

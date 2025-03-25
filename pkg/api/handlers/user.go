@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/helper"
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/models"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/helper"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"log"
 	"strconv"
 
@@ -35,7 +35,6 @@ func NewUserHandler(u usecase.UserUseCase) *UserHandler {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /signup [post]
-
 func (h *UserHandler) UserSignup(c *gin.Context) {
 	var user models.User
 
@@ -72,7 +71,6 @@ func (h *UserHandler) UserSignup(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 401 {object} response.ClientResponse
 // @Router /verify/{email} [post]
-
 func (h *UserHandler) VerifyOTP(c *gin.Context) {
 
 	email := c.Param("email")
@@ -113,7 +111,6 @@ func (h *UserHandler) VerifyOTP(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /resend-otp/{email} [post]
-
 func (h *UserHandler) ResendOTP(c *gin.Context) {
 	email := c.Param("email")
 	log.Println("Email:", email)
@@ -138,7 +135,6 @@ func (h *UserHandler) ResendOTP(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /login [post]
-
 func (h *UserHandler) UserLogin(c *gin.Context) {
 	var loginReq models.UserLogin
 
@@ -173,7 +169,6 @@ func (h *UserHandler) UserLogin(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /products [get]
-
 func (h *UserHandler) GetProducts(c *gin.Context) {
 	products, err := h.userUseCase.GetProducts()
 	if err != nil {
@@ -193,7 +188,6 @@ func (h *UserHandler) GetProducts(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /categories [get]
-
 func (cat *UserHandler) ListCategory(c *gin.Context) {
 	category, err := cat.userUseCase.ListCategory()
 	if err != nil {
@@ -215,7 +209,6 @@ func (cat *UserHandler) ListCategory(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 404 {object} response.ClientResponse
 // @Router /profile [get]
-
 func (u *UserHandler) UserProfile(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -253,7 +246,6 @@ func (u *UserHandler) UserProfile(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 404 {object} response.ClientResponse
 // @Router /profile [put]
-
 func (u *UserHandler) UpdateProfile(c *gin.Context) {
 	var profile models.User
 
@@ -301,7 +293,6 @@ func (u *UserHandler) UpdateProfile(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /send-otp [post]
-
 func (h *UserHandler) SendOTP(c *gin.Context) {
 	var sendOTP models.SendOTP
 	if err := c.ShouldBindJSON(&sendOTP); err != nil {
@@ -332,7 +323,6 @@ func (h *UserHandler) SendOTP(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 500 {object} response.ClientResponse
 // @Router /forgot-password [post]
-
 func (h *UserHandler) ForgotPassword(c *gin.Context) {
 	var input models.ForgotPassword
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -373,7 +363,6 @@ func (h *UserHandler) ForgotPassword(c *gin.Context) {
 // @Failure 400 {object} response.ClientResponse
 // @Failure 404 {object} response.ClientResponse
 // @Router /change-password [post]
-
 func (h *UserHandler) ChangePassword(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -415,7 +404,6 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /addresses [post]
-
 func (u *UserHandler) AddAddress(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -461,7 +449,6 @@ func (u *UserHandler) AddAddress(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /addresses [put]
-
 func (u *UserHandler) UpdateAddress(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -518,7 +505,6 @@ func (u *UserHandler) UpdateAddress(c *gin.Context) {
 // @Success 200 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /addresses [delete]
-
 func (u *UserHandler) DeleteAddress(c *gin.Context) {
 	idParam := c.Query("id")
 	if idParam == "" {
@@ -551,7 +537,6 @@ func (u *UserHandler) DeleteAddress(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /addresses [get]
-
 func (u *UserHandler) GetAllAddresses(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {

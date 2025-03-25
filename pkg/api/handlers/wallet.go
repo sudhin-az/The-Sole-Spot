@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"ecommerce_clean_architecture/pkg/usecase"
-	"ecommerce_clean_architecture/pkg/utils/response"
+	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,6 @@ func NewWalletHandler(usecase usecase.WalletUseCase) *WalletHandler {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /wallet [get]
-
 func (wal *WalletHandler) ViewWallet(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
@@ -53,7 +52,6 @@ func (wal *WalletHandler) ViewWallet(c *gin.Context) {
 // @Failure 401 {object} response.ClientResponse
 // @Failure 400 {object} response.ClientResponse
 // @Router /wallet/transactions [get]
-
 func (wal *WalletHandler) GetWalletTransaction(c *gin.Context) {
 	userID, ok := c.Get("id")
 	if !ok {
