@@ -144,11 +144,11 @@ func (h *UserHandler) UserLogin(c *gin.Context) {
 		return
 	}
 
-	if message, err := helper.ValidateAddress(loginReq); err != nil {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Validation failed", message, err.Error())
-		c.JSON(http.StatusBadRequest, errRes)
-		return
-	}
+	// if message, err := helper.ValidateAddress(loginReq); err != nil {
+	// 	errRes := response.ClientResponse(http.StatusBadRequest, "Validation failed", message, err.Error())
+	// 	c.JSON(http.StatusBadRequest, errRes)
+	// 	return
+	// }
 
 	userDetails, err := h.userUseCase.UserLogin(loginReq)
 	if err != nil {

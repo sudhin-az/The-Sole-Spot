@@ -28,7 +28,7 @@ func ValidateAddress(input any) (string, error) {
 			case "Email":
 				return "Invalid email format", fmt.Errorf("invalid email")
 			case "Password":
-				return "Password must be at least 5 characters long", fmt.Errorf("invalid password")
+				return "Password must be at least 4 characters long", fmt.Errorf("invalid password")
 			case "FirstName":
 				return "First name must contain only letters and spaces, and be at least 2 characters long", fmt.Errorf("invalid first name")
 			case "LastName":
