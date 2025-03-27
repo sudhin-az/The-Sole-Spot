@@ -252,7 +252,7 @@ func (r *UserRepository) GetProducts() ([]models.ProductResponse, error) {
 }
 func (r *UserRepository) ListCategory() ([]domain.Category, error) {
 	var listcategory []domain.Category
-	err := r.db.Raw("SELECT * FROM categories WHERE deleted_at IS NULL").Scan(&listcategory).Error
+	err := r.db.Raw("SELECT * FROM categories").Scan(&listcategory).Error
 	if err != nil {
 		return []domain.Category{}, err
 	}
