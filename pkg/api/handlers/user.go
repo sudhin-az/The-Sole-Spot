@@ -138,8 +138,8 @@ func (h *UserHandler) ResendOTP(c *gin.Context) {
 func (h *UserHandler) UserLogin(c *gin.Context) {
 	var loginReq models.UserLogin
 
-	if err := c.ShouldBindJSON(&loginReq); err != nil {
-		errRes := response.ClientResponse(http.StatusBadRequest, "Fields provided are in the wrong format", nil, err.Error())
+	if err := c.BindJSON(&loginReq); err != nil {
+		errRes := response.ClientResponse(http.StatusBadRequest, "Invalid request data", nil, err.Error())
 		c.JSON(http.StatusBadRequest, errRes)
 		return
 	}
