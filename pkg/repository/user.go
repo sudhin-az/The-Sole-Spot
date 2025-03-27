@@ -23,7 +23,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 
 func (r *UserRepository) GetUserByEmail(email string) (models.User, error) {
 	var user models.User
-	err := r.db.Where("email = ?", email).First(&user).Error
+	err := r.db.Raw("select * from users where email = ?", email).Scan(&user).Error
 	if err != nil {
 		return models.User{}, err
 	}
@@ -127,7 +127,7 @@ func (r *UserRepository) UpdateOTP(otp models.OTP) error {
 
 func (r *UserRepository) GetOTPByEmail(email string) (models.OTP, error) {
 	var otpRecord models.OTP
-	err := r.db.Where("email = ?", email).First(&otpRecord).Error
+	err := r.db.Where("email = ?", email).Order("id desc").First(&otpRecord).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.OTP{}, errors.New("OTP not found")
