@@ -7,6 +7,7 @@ import (
 	"ecommerce_clean_arch/pkg/utils"
 	"ecommerce_clean_arch/pkg/utils/models"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -28,14 +29,20 @@ func NewAuthUseCase(userRepo repository.UserRepository, oauthConfig *oauth2.Conf
 }
 
 func (uc *AuthUseCase) HandleGoogleLogin() string {
-	return uc.OAuthConfig.AuthCodeURL("state")
+	url := uc.OAuthConfig.AuthCodeURL("state")
+	if url == "" {
+		log.Println("Error generating authorization URL")
+		return ""
+	}
+	return url
 }
 
 func (uc *AuthUseCase) HandleGoogleCallback(c *gin.Context, code string) (models.User, string, error) {
 
 	token, err := uc.OAuthConfig.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		return models.User{}, "", errors.New("failed to exchange token")
+		log.Println("Error exchanging authorization code for token:", err)
+		return models.User{}, "", err
 	}
 
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
@@ -59,7 +66,7 @@ func (uc *AuthUseCase) HandleGoogleCallback(c *gin.Context, code string) (models
 			if err := uc.userRepo.CreateUser(user); err != nil {
 				return models.User{}, "", errors.New("failed to create user through Google SSO")
 			}
-			// existingUser = user
+			existingUser = user
 		} else {
 			return models.User{}, "", errors.New("failed to fetch user information")
 		}
