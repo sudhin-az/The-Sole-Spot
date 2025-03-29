@@ -66,7 +66,7 @@ func InitializeServer(cfg config.Config) (*api.ServerHTTP, error) {
 	oauthConfig := &oauth2.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
-		RedirectURL:  "http://www.sudhin.site/auth/google/callback",
+		RedirectURL:  "https://www.sudhin.site/auth/google/callback",
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
 	}
