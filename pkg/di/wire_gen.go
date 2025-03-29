@@ -7,6 +7,8 @@ import (
 	"ecommerce_clean_arch/pkg/db"
 	"ecommerce_clean_arch/pkg/repository"
 	"ecommerce_clean_arch/pkg/usecase"
+	"fmt"
+	"os"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -64,15 +66,18 @@ func InitializeServer(cfg config.Config) (*api.ServerHTTP, error) {
 	paymentHandler := handlers.NewPaymentHandler(*paymentUseCase)
 
 	oauthConfig := &oauth2.Config{
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-		RedirectURL:  cfg.RedirectURL,
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
 	}
 
 	authUseCase := usecase.NewAuthUseCase(*userRepo, oauthConfig)
 	authHandler := handlers.NewAuthHandler(authUseCase)
+	fmt.Println("Client ID:", oauthConfig.ClientID)
+	fmt.Println("Client Secret:", oauthConfig.ClientSecret)
+	fmt.Println("Redirect URL:", oauthConfig.RedirectURL)
 
 	server := api.NewServerHTTP(userHandler, authHandler, adminHandler, categoryHandler, productHandler, reviewHandler, cartHandler, orderHandler,
 		paymentHandler, walletHandler, wishlistHandler, couponHandler)
