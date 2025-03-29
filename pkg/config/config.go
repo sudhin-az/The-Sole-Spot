@@ -66,7 +66,6 @@ func LoadConfig() (Config, error) {
 	return config, nil
 }
 
-
 func LoadRazorpayConfig() (string, string) {
 	key := os.Getenv("KEY_ID_FOR_RAYZORPAY")
 	secret := os.Getenv("SECRET_KEY_ID_FOR_RAYZORPAY")
