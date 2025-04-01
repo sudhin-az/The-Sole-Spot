@@ -92,8 +92,7 @@ func (cu *CartUseCase) AddToCart(userID int, productID int, quantity int) (model
 		return models.CartResponse{}, errors.New("category not found")
 	}
 
-	discount := category.CategoryDiscount
-	discountedPrice := math.Round(float64(product.OfferPrice)*(1-(float64(discount)/100))*100) / 100
+	discountedPrice := math.Round(float64(product.OfferPrice)*(1-(float64(category.CategoryDiscount)/100))*100) / 100
 	totalPrice := math.Round(float64(quantity)*discountedPrice*100) / 100
 
 	existingCartItem, _ := cu.cartRepository.GetCartItem(userID, productID)
