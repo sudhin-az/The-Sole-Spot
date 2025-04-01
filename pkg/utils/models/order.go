@@ -45,16 +45,6 @@ type OrderProducts struct {
 	FinalPrice float64 `json:"total_price"`
 }
 
-type OrderDetails struct {
-	OrderId          int     `json:"order_id"`
-	DiscountAmount   float64 `json:"discount_amount"`
-	CategoryDiscount float64 `json:"category_discount"`
-	GrandTotal       float64 `json:"grand_total"`
-	FinalPrice       float64 `json:"final_price"`
-	OrderStatus      string  `json:"order_status"`
-	PaymentStatus    string  `json:"payment_status"`
-}
-
 type OrdersDetails struct {
 	CustomerName        string
 	CustomerPhoneNumber string
@@ -78,8 +68,18 @@ type OrderProductDetails struct {
 	TotalPrice  float64 `json:"total_price"`
 }
 
+type OrderDetails struct {
+	OrderId          int     `json:"order_id"`
+	DiscountAmount   float64 `json:"discount_amount"`
+	CategoryDiscount float64 `json:"category_discount"`
+	GrandTotal       float64 `json:"grand_total"`
+	FinalPrice       float64 `json:"final_price"`
+	OrderStatus      string  `json:"order_status"`
+	PaymentStatus    string  `json:"payment_status"`
+}
+
 type FullOrderDetails struct {
-	OrderDetails        OrderDetails        `json:"OrderDetails"`
+	OrderDetails        OrderDetails          `json:"OrderDetails"`
 	OrderProductDetails []OrderProductDetails `json:"OrderProductDetails"`
 }
 
