@@ -46,13 +46,13 @@ type OrderProducts struct {
 }
 
 type OrderDetails struct {
-	OrderId          int
-	DiscountAmount   float64
-	CategoryDiscount float64
-	GrandTotal       float64
-	FinalPrice       float64
-	OrderStatus      string
-	PaymentStatus    string
+	OrderId          int     `json:"order_id"`
+	DiscountAmount   float64 `json:"discount_amount"`
+	CategoryDiscount float64 `json:"category_discount"`
+	GrandTotal       float64 `json:"grand_total"`
+	FinalPrice       float64 `json:"final_price"`
+	OrderStatus      string  `json:"order_status"`
+	PaymentStatus    string  `json:"payment_status"`
 }
 
 type OrdersDetails struct {
@@ -79,9 +79,10 @@ type OrderProductDetails struct {
 }
 
 type FullOrderDetails struct {
-	OrderDetails        OrderDetails
-	OrderProductDetails []OrderProductDetails
+	OrderDetails        OrderDetails        `json:"OrderDetails"`
+	OrderProductDetails []OrderProductDetails `json:"OrderProductDetails"`
 }
+
 type CombinedOrderDetails struct {
 	OrderId       string  `json:"order_id"`
 	FinalPrice    float64 `json:"final_price"`
