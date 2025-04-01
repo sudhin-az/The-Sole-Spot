@@ -19,7 +19,7 @@ func NewPaymentUsecase(paymentRepo repository.PaymentRepository) *PaymentUsecase
 	return &PaymentUsecase{PaymentRepo: paymentRepo}
 }
 
-func (pay *PaymentUsecase) CreatePayment(orderID string, userID int) (models.CombinedOrderDetails, string, error) {
+func (pay *PaymentUsecase) CreatePayment(orderID string) (models.CombinedOrderDetails, string, error) {
 
 	combinedOrderDetails, err := pay.PaymentRepo.GetOrderDetailsByOrderId(orderID)
 	if err != nil {

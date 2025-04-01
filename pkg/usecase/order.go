@@ -202,7 +202,7 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 			OrderID:    orderID,
 			ProductID:  item.ProductID,
 			Quantity:   item.Quantity,
-			TotalPrice: (float64(item.OfferPrice) * float64(item.Quantity)) - (float64(item.OfferPrice)*float64(item.Quantity))*(order.Discount/100),
+			TotalPrice: item.TotalPrice,
 		})
 	}
 

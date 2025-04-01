@@ -2,6 +2,7 @@ package repository
 
 import (
 	"ecommerce_clean_arch/pkg/utils/models"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -24,10 +25,22 @@ func (pay *PaymentRepository) AddRazorPayDetails(orderID string, razorPayOrderID
 }
 func (pay *PaymentRepository) GetOrderDetailsByOrderId(orderID string) (models.CombinedOrderDetails, error) {
 	var orderDetails models.CombinedOrderDetails
-	err := pay.DB.Raw("select  orders.order_id,orders.final_price,orders.order_status,orders.payment_status,users.first_name,users.email,users.phone,addresses.house_name,addresses.street,addresses.city,addresses.district,addresses.state,addresses.pin from orders inner join users on  orders.user_id = users.id inner join addresses on orders.address_id=addresses.id where orders.order_id=? ", orderID).Scan(&orderDetails).Error
-
+	err := pay.DB.Raw(`
+	SELECT 
+		orders.order_id, orders.final_price, orders.order_status, 
+		orders.payment_status, users.first_name, users.email, users.phone,
+		addresses.house_name, addresses.street, addresses.city, 
+		addresses.district, addresses.state, addresses.pin 
+	FROM orders 
+	INNER JOIN users ON orders.user_id = users.id 
+	INNER JOIN addresses ON orders.address_id = addresses.id 
+	WHERE orders.order_id = ? 
+`, orderID).Scan(&orderDetails).Error
 	if err != nil {
 		return models.CombinedOrderDetails{}, err
+	}
+	if orderDetails.OrderId == "" {
+		return models.CombinedOrderDetails{}, errors.New("order not found for this user")
 	}
 	return orderDetails, nil
 }

@@ -6,7 +6,6 @@ import (
 	"ecommerce_clean_arch/pkg/utils/response"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -33,14 +32,7 @@ func NewPaymentHandler(paymentUsecase usecase.PaymentUsecase) *PaymentHandler {
 // @Router /payment [get]
 func (pay *PaymentHandler) CreatePayment(c *gin.Context) {
 	orderID := c.Query("order_id")
-	userID := c.Query("user_id")
-	user_ID, err := strconv.Atoi(userID)
-	if err != nil {
-		errorRes := response.ClientResponse(http.StatusBadRequest, "Invalid user_id", nil, err.Error())
-		c.JSON(http.StatusBadRequest, errorRes)
-		return
-	}
-	orderDetail, razorID, err := pay.PaymentUsecase.CreatePayment(orderID, user_ID)
+	orderDetail, razorID, err := pay.PaymentUsecase.CreatePayment(orderID)
 	if err != nil {
 		if strings.Contains(err.Error(), "Payment failed") {
 			errorRes := response.ClientResponse(http.StatusInternalServerError, "Payment failed", nil, err.Error())
@@ -59,7 +51,6 @@ func (pay *PaymentHandler) CreatePayment(c *gin.Context) {
 		http.StatusOK, "index.html", gin.H{
 			"final_price": orderDetail.FinalPrice * 100,
 			"razor_id":    razorID,
-			"user_id":     userID,
 			"order_id":    orderDetail.OrderId,
 			"user_name":   orderDetail.Name,
 			"total":       orderDetail.FinalPrice,
