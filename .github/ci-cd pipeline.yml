@@ -2,25 +2,56 @@ name: The-Sole-Spot CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    
+      # Step 1: Setup SSH Key
+      - name: Setup SSH Key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          echo "$SSH_KEY" > key.pem
+          chmod 600 key.pem
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 1.20
+      # Step 2: Connect to EC2 and Pull Latest Code
+      - name: Pull Latest Code from Git
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          PUBLIC_IP: ${{ secrets.PUBLIC_IP }}
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no $EC2_USER@$PUBLIC_IP '
+            cd ~/The-Sole-Spot
+            git pull origin main
+          '
 
-    - name: Install dependencies
-      run: go mod tidy
+      # Step 3: Build Go Application aaa
+      - name: Testing and Building Go Application
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          PUBLIC_IP: ${{ secrets.PUBLIC_IP }}
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no $EC2_USER@$PUBLIC_IP '
+            cd ~/The-Sole-Spot
+            go mod tidy
+            go test ./internal/controllers -v
+            go build -o main.exe ./cmd1/main.go
+          '
 
-    - name: Run Tests
-      run: go test ./... -v
+      # Step 4: Restart Application Service
+      - name: Restart Application Service
+        env:
+          EC2_USER: ${{ secrets.EC2_USER }}
+          PUBLIC_IP: ${{ secrets.PUBLIC_IP }}
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no $EC2_USER@$PUBLIC_IP '
+            sudo systemctl restart sudhin.service
+          '
+
+      # Step 5: Cleanup SSH Key
+      - name: Cleanup
+        run: |
+          rm -f key.pem
