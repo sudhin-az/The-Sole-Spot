@@ -1,37 +1,26 @@
-# Name of the GitHub Actions workflow
 name: The-Sole-Spot CI/CD Pipeline
 
-# Events that trigger the workflow
 on:
   push:
-    branches:
-      - main  # Trigger on pushes to the 'Feature' branch
+    branches: [ main ]
   pull_request:
-    branches:
-      - main  # Trigger on pull requests to the 'Feature' branch
+    branches: [ main ]
 
-# Define the jobs to be run in the workflow
 jobs:
-  # First job: Build
   build:
-    name: Build  # Name of the build job
-    runs-on: ubuntu-latest  # Specify the OS for the job
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v3  # Use the checkout action to get the code
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      # Step 2: Set up Go environment
-      - name: Set up Go
-        uses: actions/setup-go@v4  # Use the setup-go action to install Go
-        with:
-          go-version: 1.22.0  # Specify the Go version to be installed
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.20
 
-      # Step 3: Install dependencies
-      - name: Install dependencies
-        run: go mod download  # Use Go command to download the dependencies
+    - name: Install dependencies
+      run: go mod tidy
 
-      # Step 4: Run tests
-      - name: Run tests
-        run: go test -v ./...  # Run Go tests in verbose mode for all packages
+    - name: Run Tests
+      run: go test ./... -v

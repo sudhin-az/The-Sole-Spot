@@ -161,7 +161,7 @@ func (o *OrderUseCase) OrderItemsFromCart(order models.Order) (models.Order, err
 			EventDate:   time.Now(),
 			TotalAmount: uint(neweBalance),
 		}
-
+		fmt.Println("TotalAmount", walletTxn.TotalAmount)
 		if err := o.walletRepository.WalletTransaction(tx, walletTxn); err != nil {
 			return models.Order{}, fmt.Errorf("failed to record wallet transaction: %w", err)
 		}
