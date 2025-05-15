@@ -4,10 +4,9 @@ import (
 	"ecommerce_clean_arch/pkg/config"
 	"ecommerce_clean_arch/pkg/db"
 	"ecommerce_clean_arch/pkg/di"
+	"fmt"
 	"log"
 	"os"
-
-	"github.com/subosito/gotenv"
 )
 
 // @title The-Sole-Spot API
@@ -17,25 +16,20 @@ import (
 // @BasePath /
 
 func main() {
-	// Load environment variables
-	err := gotenv.Load("config.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
 	// Load configuration
 	config, configErr := config.LoadConfig()
 	if configErr != nil {
 		log.Fatal("Cannot load config:", configErr)
 	}
-	log.Println("Loaded config:", config)
+	log.Println("Config loaded successfully")
 
 	// Initialize database connection
 	database, dbErr := db.ConnectDatabase(config)
 	if dbErr != nil {
-		log.Fatal("Cannot load database:", dbErr)
+		log.Fatal("Cannot connect to database:", dbErr)
 	}
-	log.Println("Database connected:", database)
+	log.Println("Database connected successfully")
+	fmt.Println(database)
 
 	// Initialize API dependencies
 	server, err := di.InitializeAPI(config)
@@ -47,7 +41,7 @@ func main() {
 	// Initialize Server dependencies
 	server, err = di.InitializeServer(config)
 	if err != nil {
-		log.Fatal("Server initialization failed:", err) // ❌ Previously, this wasn't stopping execution
+		log.Fatal("Server initialization failed:", err)
 	}
 	log.Println("Server Dependencies initialized successfully")
 
