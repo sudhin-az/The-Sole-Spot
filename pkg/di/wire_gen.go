@@ -19,9 +19,9 @@ func InitializeServer(cfg config.Config) (*api.ServerHTTP, error) {
 		return nil, err
 	}
 
-	// Initialize repositories, use cases, and handlers
+	// Initialization
 	userRepo := repository.NewUserRepository(database)
-	userUseCase := usecase.NewUserUseCase(*userRepo)
+	userUseCase := usecase.NewUserUseCase(userRepo)
 	userHandler := handlers.NewUserHandler(*userUseCase)
 
 	adminRepo := repository.NewAdminRepository(database)

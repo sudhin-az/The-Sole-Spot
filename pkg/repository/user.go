@@ -347,7 +347,7 @@ func (r *UserRepository) DeleteAddress(userID int) error {
 	}
 	return result.Error
 }
-func (c *UserRepository) GetAllAddresses(id int) ([]domain.Address, error) {
+func (c *UserRepository) GetAllAddresses(userID int) ([]domain.Address, error) {
 	var addresses []domain.Address
 	if err := c.db.Raw("SELECT * FROM addresses WHERE deleted_at IS NULL").Scan(&addresses).Error; err != nil {
 		return []domain.Address{}, err

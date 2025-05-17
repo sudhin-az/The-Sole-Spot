@@ -14,7 +14,7 @@ type UserRepository interface {
 	DeleteTempUser(email string) error
 	SaveOrUpdateOTP(email string, otp string, otpExpiry time.Time) error
 	GetOTP(email string) (string, time.Time, error)
-	GetOTPByEmail(email string) (string, error)
+	GetOTPByEmail(email string) (models.OTP, error)
 	VerifyOTPAndMoveUser(email string, otp string) error
 	SaveOTP(email, otp string, expiry time.Time) error
 	DeleteOTP(email string) error
@@ -34,5 +34,5 @@ type UserRepository interface {
 	AddAddress(userID int, address models.AddAddress) (models.AddAddress, error)
 	UpdateAddress(userID int, address models.AddAddress) (models.AddAddress, error)
 	DeleteAddress(userID int) error
-	GetAllAddresses(id int) ([]domain.Address, error)
+	GetAllAddresses(userID int) ([]domain.Address, error)
 }

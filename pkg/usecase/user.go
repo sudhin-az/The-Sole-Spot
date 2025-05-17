@@ -3,7 +3,7 @@ package usecase
 import (
 	"ecommerce_clean_arch/pkg/domain"
 	"ecommerce_clean_arch/pkg/helper"
-	"ecommerce_clean_arch/pkg/repository"
+	"ecommerce_clean_arch/pkg/repository/interfaces"
 	"ecommerce_clean_arch/pkg/utils"
 	"ecommerce_clean_arch/pkg/utils/models"
 	"errors"
@@ -17,10 +17,10 @@ import (
 )
 
 type UserUseCase struct {
-	userRepo repository.UserRepository
+	userRepo interfaces.UserRepository
 }
 
-func NewUserUseCase(userRepo repository.UserRepository) *UserUseCase {
+func NewUserUseCase(userRepo interfaces.UserRepository) *UserUseCase {
 	return &UserUseCase{userRepo: userRepo}
 }
 
