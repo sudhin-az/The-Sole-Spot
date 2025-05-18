@@ -7,6 +7,7 @@ import (
 	mockrepository "ecommerce_clean_arch/pkg/Mock/MockRepository"
 	"ecommerce_clean_arch/pkg/domain"
 	"ecommerce_clean_arch/pkg/usecase"
+	"ecommerce_clean_arch/pkg/utils/models"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -65,6 +66,64 @@ func Test_GetAllAddresses(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tc.stub(mockUserRepo)
 			got, err := userUseCase.GetAllAddresses(tc.userID)
+
+			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
+func Test_GetAllProducts(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockProductRepo := mockrepository.NewMockUserRepository(ctrl)
+	userUseCase := usecase.NewUserUseCase(mockProductRepo)
+
+	testCases := map[string]struct {
+		stub func(m *mockrepository.MockUserRepository)
+		want []models.ProductResponse
+		err  error
+	}{
+		"success": {
+			stub: func(m *mockrepository.MockUserRepository) {
+				m.EXPECT().GetProducts().Return([]models.ProductResponse{
+					{
+						ID:          1,
+						Category_Id: 44,
+						Name:        "nike",
+						Quantity:    10,
+						Stock:       5,
+						Price:       3000,
+						OfferPrice:  2000,
+					},
+				}, nil)
+			},
+			want: []models.ProductResponse{
+				{
+					ID:          1,
+					Category_Id: 44,
+					Name:        "nike",
+					Quantity:    10,
+					Stock:       5,
+					Price:       3000,
+					OfferPrice:  2000,
+				},
+			},
+			err: nil,
+		},
+		"failure": {
+			stub: func(m *mockrepository.MockUserRepository) {
+				m.EXPECT().GetProducts().Return([]models.ProductResponse{}, errors.New("failed to fetch products"))
+			},
+			want: []models.ProductResponse{},
+			err:  errors.New("failed to fetch products"),
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			tc.stub(mockProductRepo)
+			got, err := userUseCase.GetProducts()
 
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.err, err)

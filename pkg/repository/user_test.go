@@ -73,3 +73,63 @@ func Test_GetAllAddresses(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetProducts(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupMock func(mock sqlmock.Sqlmock)
+		expectErr bool
+		expectLen int
+	}{
+		{
+			name: "Successfully Retrieved all Products",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				query := "SELECT * FROM products WHERE deleted_at IS NULL"
+
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WillReturnRows(sqlmock.NewRows([]string{
+						"id", "category_id", "name", "quantity", "stock", "price", "offer_price", "created_at", "deleted_at",
+					}).AddRow(1, 44, "nike", 10, 5, 3000, 2000, time.Now(), nil))
+			},
+			expectErr: false,
+			expectLen: 1,
+		},
+		{
+			name: "Query Failed",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				query := "SELECT * FROM products WHERE deleted_at IS NULL"
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WillReturnError(gorm.ErrInvalidDB)
+			},
+			expectErr: true,
+			expectLen: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockDB, mock, err := sqlmock.New()
+			assert.NoError(t, err)
+
+			db, err := gorm.Open(postgres.New(postgres.Config{
+				Conn: mockDB,
+			}), &gorm.Config{})
+			assert.NoError(t, err)
+
+			userRepo := repository.NewUserRepository(db)
+			tt.setupMock(mock)
+
+			products, err := userRepo.GetProducts()
+
+			if tt.expectErr {
+				assert.Error(t, err)
+				assert.Len(t, products, 0)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, products, tt.expectLen)
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
