@@ -31,18 +31,18 @@ func Test_GetAllAddresses(t *testing.T) {
 			stub: func(m *mockrepository.MockUserRepository) {
 				m.EXPECT().GetAllAddresses(1).Return([]domain.Address{
 					{
-						HouseName: "Athanikkal",
+						HouseName: "House No 1",
 						Street:    "panayur",
 						City:      "ottapalam",
 						District:  "Palakkad",
 						State:     "kerala",
-						Pin:       "679522",
+						Pin:       "123456",
 					},
 				}, nil)
 			},
 			want: []domain.Address{
 				{
-					HouseName: "Athanikkal",
+					HouseName: "House No 1",
 					Street:    "panayur",
 					City:      "ottapalam",
 					District:  "Palakkad",

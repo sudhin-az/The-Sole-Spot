@@ -29,7 +29,7 @@ func Test_GetAllAddresses(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{
 						"id", "user_id", "house_name", "street", "city", "district", "state", "pin", "created_at", "deleted_at",
 					}).
-						AddRow(101, 52, "HouseNo1", "vyttila", "kochi", "ekm", "ker", "123456", time.Now(), nil))
+						AddRow(101, 52, "House No 1", "vyttila", "kochi", "ekm", "ker", "123456", time.Now(), nil))
 			},
 			expectErr: false,
 			expectLen: 1,
