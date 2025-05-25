@@ -33,7 +33,7 @@ func InitializeServer(cfg config.Config) (*api.ServerHTTP, error) {
 	categoryHandler := handlers.NewCategoryHandler(*categoryUseCase)
 
 	productRepo := repository.NewProductRepository(database)
-	productUseCase := usecase.NewProductUseCase(*productRepo)
+	productUseCase := usecase.NewProductUseCase(productRepo)
 	productHandler := handlers.NewProductHandler(*productUseCase)
 
 	cartRepo := repository.NewCartRepository(database)

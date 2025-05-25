@@ -130,3 +130,54 @@ func Test_GetAllProducts(t *testing.T) {
 		})
 	}
 }
+func Test_GetAllCategories(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCategoryRepo := mockrepository.NewMockUserRepository(ctrl)
+	userUseCase := usecase.NewUserUseCase(mockCategoryRepo)
+
+	testCases := map[string]struct {
+		stub func(m *mockrepository.MockUserRepository)
+		want []domain.Category
+		err  error
+	}{
+		"success": {
+			stub: func(m *mockrepository.MockUserRepository) {
+				m.EXPECT().ListCategory().Return([]domain.Category{
+					{
+						ID:               1,
+						Category:         "Formal Shoes",
+						Description:      "This is Formal Shoes",
+						CategoryDiscount: 2,
+					},
+				}, nil)
+			},
+			want: []domain.Category{
+				{
+					ID:               1,
+					Category:         "Formal Shoes",
+					Description:      "This is Formal Shoes",
+					CategoryDiscount: 2,
+				},
+			},
+			err: nil,
+		},
+		"failure": {
+			stub: func(m *mockrepository.MockUserRepository) {
+				m.EXPECT().ListCategory().Return([]domain.Category{}, errors.New("failed to fetch categories"))
+			},
+			want: []domain.Category{},
+			err:  errors.New("failed to fetch categories"),
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			tc.stub(mockCategoryRepo)
+			got, err := userUseCase.ListCategory()
+
+			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}

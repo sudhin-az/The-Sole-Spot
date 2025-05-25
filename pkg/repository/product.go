@@ -19,8 +19,8 @@ func NewProductRepository(DB *gorm.DB) *ProductRepository {
 	}
 }
 
-func (p *ProductRepository) AddProduct(product models.AddProduct) (models.AddProduct, error) {
-	var productResponse models.AddProduct
+func (p *ProductRepository) AddProduct(product models.AddProduct) (models.ProductResponse, error) {
+	var productResponse models.ProductResponse
 
 	err := p.DB.Raw(
 		`INSERT INTO products (category_id, name, stock, quantity, price, offer_price) 
@@ -29,7 +29,7 @@ func (p *ProductRepository) AddProduct(product models.AddProduct) (models.AddPro
 		product.CategoryID, product.Name, product.Stock, product.Quantity, product.Price, product.OfferPrice).Scan(&productResponse).Error
 
 	if err != nil {
-		return models.AddProduct{}, err
+		return models.ProductResponse{}, err
 	}
 	return productResponse, nil
 }

@@ -133,3 +133,63 @@ func Test_GetProducts(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetCategory(t *testing.T) {
+	tests := []struct {
+		name      string
+		setupMock func(mock sqlmock.Sqlmock)
+		expectErr bool
+		expectLen int
+	}{
+		{
+			name: "Successfully Retrieved all categories",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				query := "SELECT * FROM categories"
+
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WillReturnRows(sqlmock.NewRows([]string{
+						"id", "category", "description", "category_discount",
+					}).AddRow(1, "Formal Shoes", "This is Formal Shoes", 2))
+			},
+			expectErr: false,
+			expectLen: 1,
+		},
+		{
+			name: "Query Failed",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				query := "SELECT * FROM categories"
+				mock.ExpectQuery(regexp.QuoteMeta(query)).
+					WillReturnError(gorm.ErrInvalidDB)
+			},
+			expectErr: true,
+			expectLen: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockDB, mock, err := sqlmock.New()
+			assert.NoError(t, err)
+
+			db, err := gorm.Open(postgres.New(postgres.Config{
+				Conn: mockDB,
+			}), &gorm.Config{})
+			assert.NoError(t, err)
+
+			userRepo := repository.NewUserRepository(db)
+			tt.setupMock(mock)
+
+			categories, err := userRepo.ListCategory()
+
+			if tt.expectErr {
+				assert.Error(t, err)
+				assert.Len(t, categories, 0)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, categories, tt.expectLen)
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}

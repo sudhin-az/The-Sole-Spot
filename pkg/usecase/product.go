@@ -2,18 +2,18 @@ package usecase
 
 import (
 	"ecommerce_clean_arch/pkg/domain"
-	"ecommerce_clean_arch/pkg/repository"
+	"ecommerce_clean_arch/pkg/repository/interfaces"
 	"ecommerce_clean_arch/pkg/utils/models"
 	"errors"
 )
 
 type ProductUseCase struct {
-	ProductRepository repository.ProductRepository
+	ProductRepository interfaces.ProductRepository
 }
 
-func NewProductUseCase(usecase repository.ProductRepository) *ProductUseCase {
+func NewProductUseCase(productRepo interfaces.ProductRepository) *ProductUseCase {
 	return &ProductUseCase{
-		ProductRepository: usecase,
+		ProductRepository: productRepo,
 	}
 }
 
@@ -27,7 +27,7 @@ func (p *ProductUseCase) AddProduct(product models.AddProduct) (models.ProductRe
 	}
 	productResponse := models.ProductResponse{
 		ID:          products.ID,
-		Category_Id: products.CategoryID,
+		Category_Id: products.Category_Id,
 		Name:        products.Name,
 		Stock:       products.Stock,
 		Price:       products.Price,
