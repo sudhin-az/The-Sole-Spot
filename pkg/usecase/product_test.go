@@ -33,7 +33,7 @@ func Test_AddProduct(t *testing.T) {
 				Stock:      20,
 				Quantity:   10,
 				Price:      1500,
-				OfferPrice: 1000,
+				OfferPrice: 1200,
 			},
 			expectedOutput: models.ProductResponse{
 				ID:          1,
@@ -42,7 +42,7 @@ func Test_AddProduct(t *testing.T) {
 				Stock:       20,
 				Quantity:    10,
 				Price:       1500,
-				OfferPrice:  1000,
+				OfferPrice:  1200,
 			},
 			stub: func(mockProductRepo *mockrepository.MockProductRepository) {
 				mockProductRepo.EXPECT().AddProduct(models.AddProduct{
@@ -52,7 +52,7 @@ func Test_AddProduct(t *testing.T) {
 					Stock:      20,
 					Quantity:   10,
 					Price:      1500,
-					OfferPrice: 1000,
+					OfferPrice: 1200,
 				}).Return(models.ProductResponse{
 					ID:          1,
 					Category_Id: 1,
@@ -60,7 +60,7 @@ func Test_AddProduct(t *testing.T) {
 					Stock:       20,
 					Quantity:    10,
 					Price:       1500,
-					OfferPrice:  1000,
+					OfferPrice:  1200,
 				}, nil)
 			},
 			expectedError: nil,
