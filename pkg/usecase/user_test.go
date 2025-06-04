@@ -35,7 +35,7 @@ func Test_GetAllAddresses(t *testing.T) {
 						Street:    "panayur",
 						City:      "ottapalam",
 						District:  "Palakkad",
-						State:     "kerala",
+						State:     "Tamilnadu",
 						Pin:       "123456",
 					},
 				}, nil)
@@ -46,7 +46,7 @@ func Test_GetAllAddresses(t *testing.T) {
 					Street:    "panayur",
 					City:      "ottapalam",
 					District:  "Palakkad",
-					State:     "kerala",
+					State:     "Tamilnadu",
 					Pin:       "123456",
 				},
 			},
