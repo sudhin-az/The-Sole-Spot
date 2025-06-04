@@ -130,3 +130,127 @@ func Test_AddProduct(t *testing.T) {
 		})
 	}
 }
+
+func Test_UpdateProduct(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockProductRepo := mockrepository.NewMockProductRepository(ctrl)
+	productUseCase := usecase.NewProductUseCase(mockProductRepo)
+
+	testCases := map[string]struct {
+		input          models.ProductResponse
+		productID      int
+		expectedOutput models.ProductResponse
+		stub           func(mockProductRepo *mockrepository.MockProductRepository)
+		expectedError  error
+	}{
+		"success": {
+			input: models.ProductResponse{
+				ID:          1,
+				Category_Id: 1,
+				Name:        "Convacs",
+				Stock:       15,
+				Quantity:    10,
+				Price:       3000,
+				OfferPrice:  2500,
+			},
+			productID: 1,
+			expectedOutput: models.ProductResponse{
+				ID:          1,
+				Category_Id: 1,
+				Name:        "Convacs",
+				Stock:       15,
+				Quantity:    10,
+				Price:       3000,
+				OfferPrice:  2500,
+			},
+			stub: func(mockProductRepo *mockrepository.MockProductRepository) {
+				mockProductRepo.EXPECT().UpdateProduct(models.ProductResponse{
+					ID:          1,
+					Category_Id: 1,
+					Name:        "Convacs",
+					Stock:       15,
+					Quantity:    10,
+					Price:       3000,
+					OfferPrice:  2500,
+				}, 1).Return(models.ProductResponse{
+					ID:          1,
+					Category_Id: 1,
+					Name:        "Convacs",
+					Stock:       15,
+					Quantity:    10,
+					Price:       3000,
+					OfferPrice:  2500,
+				}, nil)
+			},
+			expectedError: nil,
+		},
+		"negative price": {
+			input: models.ProductResponse{
+				ID:          1,
+				Category_Id: 1,
+				Name:        "Convacs",
+				Stock:       15,
+				Quantity:    10,
+				Price:       -3000,
+				OfferPrice:  2500,
+			},
+			productID:      1,
+			expectedOutput: models.ProductResponse{},
+			stub: func(mockProductRepo *mockrepository.MockProductRepository) {
+
+			},
+			expectedError: errors.New("invalid quantity or price"),
+		},
+		"negative quantity": {
+			input: models.ProductResponse{
+				ID:          1,
+				Category_Id: 1,
+				Name:        "Convacs",
+				Stock:       15,
+				Quantity:    -10,
+				Price:       3000,
+				OfferPrice:  2500,
+			},
+			productID:      1,
+			expectedOutput: models.ProductResponse{},
+			stub: func(mockProductRepo *mockrepository.MockProductRepository) {
+
+			},
+			expectedError: errors.New("invalid quantity or price"),
+		},
+		"database error": {
+			input: models.ProductResponse{
+				ID:          1,
+				Category_Id: 1,
+				Name:        "Convacs",
+				Stock:       15,
+				Quantity:    10,
+				Price:       3000,
+				OfferPrice:  2500,
+			},
+			productID:      1,
+			expectedOutput: models.ProductResponse{},
+			stub: func(mockProductRepo *mockrepository.MockProductRepository) {
+				mockProductRepo.EXPECT().UpdateProduct(gomock.Any(), gomock.Any()).
+					Return(models.ProductResponse{}, errors.New("database error"))
+			},
+			expectedError: errors.New("database error"),
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			tc.stub(mockProductRepo)
+
+			result, err := productUseCase.UpdateProduct(tc.input, tc.productID)
+
+			if tc.expectedError != nil {
+				assert.EqualError(t, err, tc.expectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tc.expectedOutput, result)
+		})
+	}
+}

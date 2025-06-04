@@ -34,16 +34,32 @@ func (p *ProductRepository) AddProduct(product models.AddProduct) (models.Produc
 	return productResponse, nil
 }
 
-func (p *ProductRepository) UpdateProduct(products models.ProductResponse, productID int) (models.ProductResponse, error) {
-	var productResponse models.ProductResponse
+func (p *ProductRepository) UpdateProduct(product models.ProductResponse, productID int) (models.ProductResponse, error) {
+	var updatedProduct models.ProductResponse
+	err := p.DB.Raw(
+		`UPDATE products SET 
+            category_id = $1, 
+            name = $2, 
+            stock = $3, 
+            quantity = $4, 
+            price = $5, 
+            offer_price = $6 
+        WHERE id = $7 
+        RETURNING id, category_id, name, stock, quantity, price, offer_price`,
+		product.Category_Id,
+		product.Name,
+		product.Stock,
+		product.Quantity,
+		product.Price,
+		product.OfferPrice,
+		productID,
+	).Scan(&updatedProduct).Error
 
-	err := p.DB.Raw("UPDATE products SET category_id = ?, name = ?, stock= ?, quantity = ?, price = ?, offer_price = ? WHERE id = ? RETURNING id, category_id, name, stock, quantity, price, offer_price",
-		products.Category_Id, products.Name, products.Stock, products.Quantity, products.Price, products.OfferPrice, productID).Scan(&productResponse).Error
 	if err != nil {
 		return models.ProductResponse{}, fmt.Errorf("error updating product: %w", err)
 	}
 
-	return productResponse, nil
+	return updatedProduct, nil
 }
 
 func (p *ProductRepository) DeleteProduct(productID int) error {

@@ -36,7 +36,7 @@ func Test_GetAllAddresses(t *testing.T) {
 						City:      "ottapalam",
 						District:  "Palakkad",
 						State:     "kerala",
-						Pin:       "123456",
+						Pin:       "679522",
 					},
 				}, nil)
 			},
@@ -47,7 +47,7 @@ func Test_GetAllAddresses(t *testing.T) {
 					City:      "ottapalam",
 					District:  "Palakkad",
 					State:     "kerala",
-					Pin:       "123456",
+					Pin:       "679522",
 				},
 			},
 			err: nil,
