@@ -26,7 +26,7 @@ func Test_CreateOrderItems(t *testing.T) {
 				{
 					OrderID:    1,
 					ProductID:  1,
-					Quantity:   10,
+					Quantity:   15,
 					TotalPrice: 2000,
 				},
 			},
@@ -34,7 +34,7 @@ func Test_CreateOrderItems(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "order_items" 
 				("order_id","product_id","quantity","total_price") VALUES ($1,$2,$3,$4) RETURNING "id"`)).
-					WithArgs(1, 1, 10, 2000.0).
+					WithArgs(1, 1, 15, 2000.0).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 				mock.ExpectCommit()
 			},
