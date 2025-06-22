@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -23,39 +22,68 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	var config Config
 
-	// First check if CONFIG_PATH_DEV env var is set
-	configPath := os.Getenv("CONFIG_PATH_DEV")
-	if configPath == "" {
-		// Fallback to working directory logic
-		workDir, err := os.Getwd()
-		if err != nil {
-			return config, fmt.Errorf("error getting working directory: %v", err)
+	// Get current and parent directories
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return config, fmt.Errorf("❌ Failed to get working directory: %v", err)
+	}
+	parentDir := filepath.Dir(currentDir)
+
+	searchPaths := []string{currentDir, parentDir}
+
+	// Check if env variables are already set
+	requiredVars := []string{
+		"DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD",
+		"GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URL",
+	}
+
+	allSet := true
+	for _, v := range requiredVars {
+		if os.Getenv(v) == "" {
+			allSet = false
+			fmt.Printf("⚠️ Missing env var: %s\n", v)
 		}
-		configPath = filepath.Dir(workDir)
 	}
 
-	// Setup Viper
-	viper.SetConfigName(".env")
-	viper.SetConfigType("env")
-	viper.AddConfigPath(configPath)
-	viper.AutomaticEnv()
+	if allSet {
+		fmt.Println("✅ All required environment variables are already set.")
+		config.DBHost = "localhost"
 
-	if err := viper.ReadInConfig(); err != nil {
-		return config, fmt.Errorf("error reading config file from %s: %v", configPath, err)
+		host := "localhost"
+		if os.Getenv("DOCKER") == "YES" {
+			host = "host.docker.internal"
+		}
+		
+		config = Config{
+			DBHost:       host,
+			DBName:       os.Getenv("DB_NAME"),
+			DBUser:       os.Getenv("DB_USER"),
+			DBPort:       os.Getenv("DB_PORT"),
+			DBPassword:   os.Getenv("DB_PASSWORD"),
+			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
+		}
+		
+		fmt.Println(config)
+		return config, nil
 	}
 
-	if err := viper.Unmarshal(&config); err != nil {
-		return config, fmt.Errorf("error unmarshalling config: %v", err)
+	// Try to load from .env in currentDir, then parentDir
+	for _, path := range searchPaths {
+		viper.SetConfigName(".env")
+		viper.SetConfigType("env")
+		viper.AddConfigPath(path)
+		viper.AutomaticEnv()
+
+		if err := viper.ReadInConfig(); err == nil {
+			fmt.Println("📄 Loaded config from:", viper.ConfigFileUsed())
+			if err := viper.Unmarshal(&config); err != nil {
+				return config, fmt.Errorf("❌ Failed to unmarshal config: %v", err)
+			}
+			return config, nil
+		}
 	}
 
-	return config, nil
-}
-
-func LoadRazorpayConfig() (string, string) {
-	key := os.Getenv("KEY_ID_FOR_RAYZORPAY")
-	secret := os.Getenv("SECRET_KEY_ID_FOR_RAYZORPAY")
-	if key == "" || secret == "" {
-		log.Fatal("Razorpay credentials are not set in the environment")
-	}
-	return key, secret
+	return config, fmt.Errorf("❌ .env file not found in current or parent directory")
 }

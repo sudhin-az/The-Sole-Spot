@@ -4,7 +4,6 @@ import (
 	"ecommerce_clean_arch/pkg/api/handlers"
 	"ecommerce_clean_arch/pkg/api/routes"
 	"log"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 
@@ -35,8 +34,7 @@ func NewServerHTTP(userHandler *handlers.UserHandler, authHandler *handlers.Auth
 	//add swagger
 	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	templatePath, _ := filepath.Abs("../templates/*")
-	router.LoadHTMLGlob(templatePath)
+	router.LoadHTMLGlob("templates/*")
 
 	// Set up user routes
 	userGroup := router.Group("/user")

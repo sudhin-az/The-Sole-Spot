@@ -154,3 +154,7 @@ func Test_GetProductStock(t *testing.T) {
 		})
 	}
 }
+
+func Te()  {
+	
+}
