@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sole-spot-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sole-spot
+  template:
+    metadata:
+      labels:
+        app: sole-spot
+    spec:
+      containers:
+        - name: sole-spot-container
+          image: sudhin123/sole-spot:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: "postgres"
+            - name: DB_NAME
+              value: "ecommerce_clean_arch"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASSWORD
+              value: "sudhin123"
+            - name: DB_PORT
+              value: "5432"
+            - name: DOCKER
+              value: "YES"
