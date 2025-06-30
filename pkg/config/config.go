@@ -52,8 +52,7 @@ func LoadConfig() (Config, error) {
 		host := "localhost"
 		if os.Getenv("DOCKER") == "YES" {
 			host = "host.docker.internal"
-		}
-		
+		} 
 		config = Config{
 			DBHost:       host,
 			DBName:       os.Getenv("DB_NAME"),
