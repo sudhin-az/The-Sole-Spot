@@ -20,6 +20,8 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: K8
+              value: "YES"
             - name: DB_HOST
               value: "postgres-service"
             - name: DB_NAME

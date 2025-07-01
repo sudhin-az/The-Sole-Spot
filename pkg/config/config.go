@@ -25,7 +25,7 @@ func LoadConfig() (Config, error) {
 	// Get current and parent directories
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return config, fmt.Errorf("Failed to get working directory: %v", err)
+		return config, fmt.Errorf("failed to get working directory: %v", err)
 	}
 	parentDir := filepath.Dir(currentDir)
 
@@ -41,18 +41,24 @@ func LoadConfig() (Config, error) {
 	for _, v := range requiredVars {
 		if os.Getenv(v) == "" {
 			allSet = false
-			fmt.Printf("⚠️ Missing env var: %s\n", v)
+			fmt.Printf("⚠️ missing env var: %s\n", v)
 		}
 	}
 
 	if allSet {
-		fmt.Println("All required environment variables are already set.")
-		config.DBHost = "localhost"
+		fmt.Println("✅ all required environment variables are already set.")
 
-		host := "localhost"
-		if os.Getenv("DOCKER") == "YES" {
+		// prioritize K8 > DOCKER > localhost
+		var host string
+		switch {
+		case os.Getenv("K8") == "YES":
+			host = os.Getenv("DB_HOST")
+		case os.Getenv("DOCKER") == "YES":
 			host = "host.docker.internal"
-		} 
+		default:
+			host = "localhost"
+		}
+
 		config = Config{
 			DBHost:       host,
 			DBName:       os.Getenv("DB_NAME"),
@@ -63,12 +69,12 @@ func LoadConfig() (Config, error) {
 			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 			RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
 		}
-		
+
 		fmt.Println(config)
 		return config, nil
 	}
 
-	// Try to load from .env in currentDir, then parentDir
+	// fallback: try loading from .env file
 	for _, path := range searchPaths {
 		viper.SetConfigName(".env")
 		viper.SetConfigType("env")
@@ -76,9 +82,9 @@ func LoadConfig() (Config, error) {
 		viper.AutomaticEnv()
 
 		if err := viper.ReadInConfig(); err == nil {
-			fmt.Println("📄 Loaded config from:", viper.ConfigFileUsed())
+			fmt.Println("📄 loaded config from:", viper.ConfigFileUsed())
 			if err := viper.Unmarshal(&config); err != nil {
-				return config, fmt.Errorf(" Failed to unmarshal config: %v", err)
+				return config, fmt.Errorf("failed to unmarshal config: %v", err)
 			}
 			return config, nil
 		}
