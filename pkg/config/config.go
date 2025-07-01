@@ -25,7 +25,7 @@ func LoadConfig() (Config, error) {
 	// Get current and parent directories
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return config, fmt.Errorf("❌ Failed to get working directory: %v", err)
+		return config, fmt.Errorf("Failed to get working directory: %v", err)
 	}
 	parentDir := filepath.Dir(currentDir)
 
@@ -46,7 +46,7 @@ func LoadConfig() (Config, error) {
 	}
 
 	if allSet {
-		fmt.Println("✅ All required environment variables are already set.")
+		fmt.Println("All required environment variables are already set.")
 		config.DBHost = "localhost"
 
 		host := "localhost"
@@ -78,11 +78,11 @@ func LoadConfig() (Config, error) {
 		if err := viper.ReadInConfig(); err == nil {
 			fmt.Println("📄 Loaded config from:", viper.ConfigFileUsed())
 			if err := viper.Unmarshal(&config); err != nil {
-				return config, fmt.Errorf("❌ Failed to unmarshal config: %v", err)
+				return config, fmt.Errorf(" Failed to unmarshal config: %v", err)
 			}
 			return config, nil
 		}
 	}
 
-	return config, fmt.Errorf("❌ .env file not found in current or parent directory")
+	return config, fmt.Errorf(".env file not found in current or parent directory")
 }

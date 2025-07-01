@@ -15,27 +15,42 @@ spec:
         app: sole-spot
     spec:
       containers:
-        - name: sole-spot-container
+        - name: sole-spot
           image: sudhin123/sole-spot:latest
           ports:
             - containerPort: 8080
           env:
-            - name: DBHOST
-              value: "postgres"
-            - name: DBUSER
-              valueFrom:
-                secretKeyRef:
-                  name: secretcollection
-                  key: dbuser
-            - name: DBPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: secretcollection
-                  key: dbpassword
-            - name: DBNAME
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: secretcollection
                   key: dbname
-            - name: DBPORT
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: dbuser
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: dbpassword
+            - name: DB_PORT
               value: "5432"
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: google_client_id
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: google_client_secret
+            - name: GOOGLE_REDIRECT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: google_redirect_url
