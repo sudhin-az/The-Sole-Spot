@@ -54,3 +54,8 @@ spec:
                 secretKeyRef:
                   name: secretcollection
                   key: google_redirect_url
+            - name: DOCKER
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: docker
