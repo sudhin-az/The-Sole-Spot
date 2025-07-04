@@ -51,8 +51,8 @@ func (h *UserHandler) UserSignup(c *gin.Context) {
 
 	_, err := h.userUseCase.SaveTempUserAndGenerateOTP(user)
 	if err != nil {
-		errRes := response.UserResponse("Signup failed")
-		c.JSON(http.StatusInternalServerError, errRes)
+		// errRes := response.UserResponse("Signup failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": err.Error()})
 		return
 	}
 

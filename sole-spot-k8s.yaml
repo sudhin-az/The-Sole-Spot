@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: sole-spot
-          image: sudhin123/sole-spot:latest
+          image: sudhin123/sole-spot:v2
           ports:
             - containerPort: 8080
           env:
@@ -61,3 +61,35 @@ spec:
                 secretKeyRef:
                   name: secretcollection
                   key: docker
+            - name: SERVER_IP
+              value: "localhost"
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: smtp_host
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: smtp_port
+            - name: SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: smtp_username
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: smtp_password
+            - name: SMTP_SENDER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: smtp_sender_name
+            - name: SMTP_SENDER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: secretcollection
+                  key: smtp_sender_email
