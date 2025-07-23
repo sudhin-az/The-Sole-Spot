@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: postgres-deployment
 spec:
-  serviceName: postgres-service  # ✅ required for StatefulSet
+  serviceName: postgres-service  
   selector:
     matchLabels:
       app: postgres

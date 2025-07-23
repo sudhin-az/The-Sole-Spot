@@ -22,7 +22,6 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	var config Config
 
-	// Get current and parent directories
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return config, fmt.Errorf("failed to get working directory: %v", err)
@@ -31,7 +30,6 @@ func LoadConfig() (Config, error) {
 
 	searchPaths := []string{currentDir, parentDir}
 
-	// Check if env variables are already set
 	requiredVars := []string{
 		"DB_NAME", "DB_USER", "DB_PORT", "DB_PASSWORD",
 		"GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URL",
@@ -48,7 +46,6 @@ func LoadConfig() (Config, error) {
 	if allSet {
 		fmt.Println("✅ all required environment variables are already set.")
 
-		// prioritize K8 > DOCKER > localhost
 		var host string
 		switch {
 		case os.Getenv("K8") == "YES":
@@ -74,7 +71,6 @@ func LoadConfig() (Config, error) {
 		return config, nil
 	}
 
-	// fallback: try loading from .env file
 	for _, path := range searchPaths {
 		viper.SetConfigName(".env")
 		viper.SetConfigType("env")
