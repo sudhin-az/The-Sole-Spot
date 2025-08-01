@@ -39,12 +39,12 @@ func LoadConfig() (Config, error) {
 	for _, v := range requiredVars {
 		if os.Getenv(v) == "" {
 			allSet = false
-			fmt.Printf("⚠️ missing env var: %s\n", v)
+			fmt.Printf("missing env var: %s\n", v)
 		}
 	}
 
 	if allSet {
-		fmt.Println("✅ all required environment variables are already set.")
+		fmt.Println("all required environment variables are already set.")
 
 		var host string
 		switch {
